@@ -1,0 +1,115 @@
+/* 1. DISEÑO DE CAMPOS (Inputs y Cajas de texto) */
+.forminator-input,
+.forminator-textarea,
+.forminator-number,
+.forminator-radio {
+    border: 2px solid #A0CED4 !important;
+    border-radius: 8px !important;
+    background-color: #ffffff !important;
+    color: #1D1E1C !important;
+    padding: 10px 15px !important;
+}
+
+/* 2. BARRA DE PROGRESO (Pestañas limpias) */
+.forminator-pagination-steps {
+    display: flex !important;
+    justify-content: space-around !important;
+    align-items: center !important;
+    margin-bottom: 40px !important;
+}
+
+/* Ocultar elementos feos */
+.forminator-pagination-steps .forminator-step-line,
+.forminator-pagination-steps .forminator-step-dot {
+    display: none !important;
+}
+
+/* Estilo base de pasos */
+.forminator-pagination-steps .forminator-step {
+    flex: 1 !important;
+    text-align: center !important;
+    padding: 10px !important;
+    color: #1D1E1C !important;
+    background-color: #f0f4f4 !important;
+    border-radius: 20px !important;
+    margin: 0 5px !important;
+    font-weight: 500 !important;
+}
+
+/* ESTILO ACTIVO (Blanco forzado) */
+.forminator-pagination-steps .forminator-step.forminator-current {
+    background-color: #198C9C !important; 
+}
+
+/* ESTA ES LA CLAVE: Forzar el color blanco en el texto activo */
+.forminator-pagination-steps .forminator-step.forminator-current,
+.forminator-pagination-steps .forminator-step.forminator-current span,
+.forminator-pagination-steps .forminator-step.forminator-current a {
+    color: #ffffff !important;
+    font-weight: 800 !important;
+}
+
+.resumen-premium {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    border: 1px solid #e1e8e8;
+    font-family: 'Raleway', sans-serif;
+}
+.resumen-premium h3 {
+    color: #198C9C;
+    font-size: 20px;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #f0f4f4;
+    text-align: center;
+}
+.resumen-grid { display: grid; gap: 10px; }
+.resumen-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: #fcfcfc;
+    border-radius: 8px;
+    border: 1px solid #f0f4f4;
+}
+.resumen-row span { color: #666; font-weight: 500; }
+.resumen-row strong { color: #1D1E1C; }
+.resumen-total {
+    margin-top: 20px;
+    padding: 15px;
+    background: #198C9C;
+    color: #ffffff;
+    border-radius: 10px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.2em;
+    font-weight: 800;
+}
+
+/* 3. BOTONES */
+.forminator-button-submit,
+.forminator-button-next {
+    background-color: #198C9C !important;
+    color: #ffffff !important;
+    border-radius: 8px !important;
+    font-weight: 700 !important;
+}
+
+/* Estilo unificado para el botón Anterior */
+.forminator-button-back {
+    background: #ffffff !important; /* Fondo blanco */
+    color: #198C9C !important;      /* Texto azul */
+    border: 2px solid #198C9C !important; /* Borde azul */
+    border-radius: 8px !important;
+    padding: 10px 25px !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+}
+
+/* Efecto al pasar el ratón */
+.forminator-button-back:hover {
+    background: #198C9C !important;
+    color: #ffffff !important;
+}
