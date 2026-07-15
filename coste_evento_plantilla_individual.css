@@ -1,0 +1,29 @@
+/* Contenedor del círculo */
+.precio-evento {
+    background-color: #ffffff !important;
+    border: 3px solid #198C9C !important;
+    border-radius: 50% !important;
+    width: 90px !important; /* Un poco más grande para que quepa bien */
+    height: 90px !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    margin: 10px auto !important;
+    padding: 0 !important;
+}
+
+/* Forzamos el formato del texto */
+.precio-evento, .precio-evento * {
+    color: #198C9C !important;
+    font-family: 'Raleway', sans-serif !important;
+    font-weight: 800 !important;
+    font-size: 20px !important; /* Número más grande */
+    display: flex !important;
+    align-items: center !important;
+    white-space: nowrap !important;
+}
+
+/* Truco para mover el símbolo € al final */
+.precio-evento {
+    flex-direction: row-reverse !important; 
+}
