@@ -24,19 +24,32 @@ function shortcode_programacion_general_meses() {
         .app-card-content-box { width: 70%; display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 20px 24px; box-sizing: border-box; }
         .app-card-textos { display: flex; flex-direction: column; gap: 8px; flex-grow: 1; }
         .app-header-titulo-box { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 4px; }
-        .app-card-titulo { font-family: "Raleway", sans-serif !important; font-size: 24px !important; font-weight: 600 !important; color: #1a202c !important; margin: 0 !important; }
+        
+        /* Título con enlace y hover */
+        .app-titulo-link { text-decoration: none !important; color: #1a202c !important; transition: color 0.3s ease; }
+        .app-titulo-link:hover .app-card-titulo { color: #198C9C !important; }
+        .app-card-titulo { font-family: "Raleway", sans-serif !important; font-size: 24px !important; font-weight: 600 !important; margin: 0 !important; }
+        
         .app-card-badge { display: inline-flex; align-items: center; font-family: "Raleway", sans-serif !important; font-size: 11px !important; font-weight: 700 !important; color: #ffffff !important; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1; }
         .app-card-badge svg { margin-right: 6px; width: 14px; height: 14px; border-radius: 2px; }
         .badge-idioma { background: #0e7490; }
         .badge-edad { background: #4a5568; padding-top:6px; padding-bottom: 6px;}
+        
         .app-card-detalles { display: flex; flex-wrap: wrap; gap: 15px; font-family: "Raleway", sans-serif !important; font-size: 16px !important; color: #4a5568 !important; margin: 0 !important; }
         .app-detalle-item { display: flex; align-items: center; gap: 6px;}
         .app-detalle-item svg {color: #A0CED4; }
         .app-detalle-precio { font-weight: 700 !important; color: #0e7490 !important; }
         .app-detalle-precio svg {display:none;}
-        .app-card-boton-box { flex-shrink: 0; display: flex; align-items: center; }
+        
+        .app-card-boton-box { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 5px; }
         .app-card-btn { display: inline-block; background-color: #0e7490; color: #ffffff !important; padding: 12px 24px; border-radius: 30px; font-family: "Raleway", sans-serif !important; font-size: 16px !important; font-weight: 700 !important; text-decoration: none !important; white-space: nowrap; transition: background-color 0.2s ease; }
         .app-card-btn:hover { background-color: #0891b2; }
+        
+        /* Estilos Estado Manual */
+        .app-estado-container { font-family: "Raleway", sans-serif !important; font-size: 13px !important; color: #4a5568; margin-top: 5px; }
+        .estado-disponible { color: #2f855a !important; font-weight: 800 !important; }
+        .estado-ocupado { color: #c53030 !important; font-weight: 800 !important; }
+
         @media (max-width: 768px) { 
             .app-card-evento { flex-direction: column; } 
             .app-card-img-box { width: 100%; height: 200px; } 
@@ -58,7 +71,6 @@ function shortcode_programacion_general_meses() {
             $enlace = get_permalink();
             $imagen = has_post_thumbnail($id) ? get_the_post_thumbnail_url($id, 'medium') : 'https://ui-avatars.com/api/?name=' . urlencode($titulo) . '&background=0e7490&color=fff&size=150';
             
-            // LÓGICA DE FECHAS
             $fecha_raw = get_post_meta($id, '_EventStartDate', true);
             $mes_anio_key = date('Y-m', strtotime($fecha_raw));
             
@@ -68,7 +80,6 @@ function shortcode_programacion_general_meses() {
                 $mes_actual_tracker = $mes_anio_key;
             }
             
-            // TAXONOMÍAS
             $idiomas_lista = get_the_terms($id, 'idioma');
             $idioma_texto = (!empty($idiomas_lista) && !is_wp_error($idiomas_lista)) ? $idiomas_lista[0]->name : '';
             
@@ -76,11 +87,21 @@ function shortcode_programacion_general_meses() {
             $edad_texto = (!empty($edades_lista) && !is_wp_error($edades_lista)) ? $edades_lista[0]->name : '';
 
             $duracion_lista = get_the_terms($id, 'duracion');
+            // AQUÍ ESTABA EL ERROR: Cambiado $duracion_texto[0]->name a $duracion_lista[0]->name
             $duracion_texto = (!empty($duracion_lista) && !is_wp_error($duracion_lista)) ? $duracion_lista[0]->name : '';
             
-            // ORGANIZADOR
-            $organizador = tribe_get_organizer($id);
+            // Taxonomía estado_pases
+            $pases_lista = get_the_terms($id, 'estado_pases');
+            $estado_texto = (!empty($pases_lista) && !is_wp_error($pases_lista)) ? $pases_lista[0]->name : '';
+            $clase_estado = (strtolower($estado_texto) == 'ocupado') ? 'estado-ocupado' : 'estado-disponible';
             
+            $organizador = tribe_get_organizer($id);
+            $fecha = tribe_get_start_date($id, false, 'd \d\e F');
+            $hora = tribe_get_start_date($id, false, 'H:i');
+            $lugar = tribe_get_venue($id);
+            $precio_raw = tribe_get_cost($id);
+            $precio = (!empty($precio_raw) && is_numeric($precio_raw)) ? $precio_raw . '€' : ($precio_raw == '0' || empty($precio_raw) ? 'Gratuito' : $precio_raw);
+
             // BANDERAS SVG
             $svg_bandera = '';
             if ($idioma_texto) {
@@ -91,19 +112,15 @@ function shortcode_programacion_general_meses() {
                     $svg_bandera = '<svg viewBox="0 0 60 30" xmlns="http://www.w3.org/2000/svg"><g clip-path="url(#s)"><path d="M0,0 v30 h60 v-30 z" fill="#012169"/><path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6"/><path d="M30,0 v30 M0,15 h60" stroke="#fff" stroke-width="10"/></g></svg>';
                 }
             }
-            
-            $fecha = tribe_get_start_date($id, false, 'd \d\e F');
-            $hora = tribe_get_start_date($id, false, 'H:i');
-            $lugar = tribe_get_venue($id);
-            $precio_raw = tribe_get_cost($id);
-            $precio = (!empty($precio_raw) && is_numeric($precio_raw)) ? $precio_raw . '€' : ($precio_raw == '0' || empty($precio_raw) ? 'Gratuito' : $precio_raw);
 
             // HTML TARJETA
             $html .= '<div class="app-card-evento">';
             $html .= '  <div class="app-card-img-box"><img src="' . esc_url($imagen) . '" alt="' . esc_attr($titulo) . '" class="app-card-img"></div>';
             $html .= '  <div class="app-card-content-box">';
             $html .= '      <div class="app-card-textos">';
-            $html .= '          <div class="app-header-titulo-box"><h3 class="app-card-titulo">' . esc_html($titulo) . '</h3>';
+            // Título enlazado a nueva pestaña
+            $html .= '          <div class="app-header-titulo-box"><a href="' . esc_url($enlace) . '" target="_blank" class="app-titulo-link"><h3 class="app-card-titulo">' . esc_html($titulo) . '</h3></a>';
+            
             if ($idioma_texto) $html .= '<span class="app-card-badge badge-idioma">' . $svg_bandera . esc_html($idioma_texto) . '</span>'; 
             if ($edad_texto) $html .= '<span class="app-card-badge badge-edad">' . esc_html($edad_texto) . '</span>'; 
             $html .= '          </div>';
@@ -116,13 +133,20 @@ function shortcode_programacion_general_meses() {
             $html .= '              <span class="app-detalle-item app-detalle-precio">' . esc_html($precio) . '</span>';
             $html .= '          </div>';
             $html .= '      </div>';
-            $html .= '      <div class="app-card-boton-box"><a href="' . esc_url($enlace) . '" class="app-card-btn">Reservar</a></div>';
+            
+            // Botón nueva pestaña y Estado debajo
+            $html .= '      <div class="app-card-boton-box">';
+            $html .= '          <a href="' . esc_url($enlace) . '" target="_blank" class="app-card-btn">Reservar</a>';
+            if ($estado_texto) {
+                $html .= '      <div class="app-estado-container">Estado: <span class="' . $clase_estado . '">' . esc_html($estado_texto) . '</span></div>';
+            }
+            $html .= '      </div>';
             $html .= '  </div>';
             $html .= '</div>';
         }
         wp_reset_postdata();
     } else {
-        $html .= '<p style="font-family:\'Raleway\',sans-serif; text-align:center;">No hay eventos programados.</p>';
+        $html .= '<p style="font-family:\'Raleway\',sans-serif; text-align:center;">No hay eventos programados todavía.</p>';
     }
 
     $html .= '</div>';
