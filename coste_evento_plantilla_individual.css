@@ -23,7 +23,3 @@
     white-space: nowrap !important;
 }
 
-/* Orden del símbolo € */
-.precio-evento {
-    flex-direction: row-reverse !important; 
-}
