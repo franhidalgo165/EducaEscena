@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Tareas - Fran y Dani</title>
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --fran-color: #2b5c8f;
+            --dani-color: #2e7d32;
+            --text-color: #333333;
+            --border-color: #e1e8ed;
+            --completed-color: #888888;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            max-width: 1000px;
+            margin: 0 auto 25px auto;
+        }
+
+        .header h1 {
+            color: #1a252f;
+            margin-bottom: 5px;
+            font-size: 1.8rem;
+        }
+
+        .columns-container {
+            display: flex;
+            gap: 20px;
+            max-width: 1100px;
+            margin: 0 auto;
+            align-items: flex-start;
+        }
+
+        .column {
+            flex: 1;
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+            border-top: 5px solid transparent;
+        }
+
+        .column.fran {
+            border-top-color: var(--fran-color);
+        }
+
+        .column.dani {
+            border-top-color: var(--dani-color);
+        }
+
+        .column-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
+
+        .column-header h2 {
+            margin: 0;
+            font-size: 1.4rem;
+        }
+
+        .column.fran .column-header h2 {
+            color: var(--fran-color);
+        }
+
+        .column.dani .column-header h2 {
+            color: var(--dani-color);
+        }
+
+        .badge {
+            font-size: 0.85rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+            color: white;
+            font-weight: 600;
+        }
+
+        .column.fran .badge {
+            background-color: var(--fran-color);
+        }
+
+        .column.dani .badge {
+            background-color: var(--dani-color);
+        }
+
+        .task-group {
+            margin-bottom: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            background-color: #fafbfc;
+            transition: all 0.2s ease;
+        }
+
+        .task-group:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .main-task {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 0.98rem;
+        }
+
+        .sub-tasks {
+            margin-top: 10px;
+            margin-left: 26px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sub-task {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-weight: normal;
+            font-size: 0.9rem;
+        }
+
+        /* Checkboxes */
+        input[type="checkbox"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid #aaa;
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+            position: relative;
+            margin-top: 2px;
+            flex-shrink: 0;
+            background-color: #fff;
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        .column.fran input[type="checkbox"]:checked {
+            background-color: var(--fran-color);
+            border-color: var(--fran-color);
+        }
+
+        .column.dani input[type="checkbox"]:checked {
+            background-color: var(--dani-color);
+            border-color: var(--dani-color);
+        }
+
+        input[type="checkbox"]:checked::after {
+            content: '✓';
+            position: absolute;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            top: -2px;
+            left: 3px;
+        }
+
+        label {
+            cursor: pointer;
+            line-height: 1.4;
+            transition: color 0.2s, text-decoration 0.2s;
+        }
+
+        input[type="checkbox"]:checked + label {
+            text-decoration: line-through;
+            color: var(--completed-color);
+        }
+
+        @media (max-width: 768px) {
+            .columns-container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>📋 Asignación de Tareas</h1>
+</div>
+
+<div class="columns-container">
+    <!-- COLUMNA FRAN -->
+    <div class="column fran">
+        <div class="column-header">
+            <h2>👤 Fran</h2>
+            <span class="badge">Tareas: 1, 4, 5, 6, 7, 8</span>
+        </div>
+
+        <!-- 1. Panel -->
+        <div class="task-group">
+            <div class="main-task">
+                <input type="checkbox" id="fran-task1">
+                <label for="fran-task1">1. Panel: Gestión clonar eventos.</label>
+            </div>
+        </div>
+
+        <!-- 4. Pág. inicio móvil -->
+        <div class="task-group">
+            <div class="main-task">
+                <input type="checkbox" id="fran-task4">
+                <label for="fran-task4">4. Pág. inicio móvil: Centrar iconos de sedes.</label>
+            </div>
+        </div>
+
+        <!-- 5. Pág. eventos y sedes -->
+        <div class="task-group">
+            <div class="main-task">
+                <input type="checkbox" id="fran-task5">
+                <label for="fran-task5">5. Pág. eventos y sedes: Texto de docentes no pagar.</label>
+            </div>
+        </div>
+
+        <!-- 6. Recintos y Sedes -->
+        <div class="task-group">
+            <div class="main-task">
+                <input type="checkbox" id="fran-task6">
+                <label for="fran-task6">6. Recintos y Sedes:</label>
+            </div>
+            <div class="sub-tasks">
+                <div class="sub-task">
+                    <input type="checkbox" id="fran-task6-1">
+                    <label for="fran-task6-1">Cada sede tiene sus recintos.</label>
+                </div>
+                <div class="sub-task">
+                    <input type="checkbox" id="fran-task6-2">
+                    <label for="fran-task6-2">Al hacer un evento y elegir sede, solo deben salir los recintos de la sede correspondiente.</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. Eventos -->
+        <div class="task-group">
+            <div class="main-task">
+                <input type="checkbox" id="fran-task7">
+                <label for="fran-task7">7. Eventos: Clonar eventos.</label>
+            </div>
+        </div>
+
+        <!-- 8. Panel / Pop-up -->
+        <div class="task-group">
+            <div class="main-task">
+                <input type="checkbox" id="fran-task8">
+                <label for="fran-task8">8. Panel / Pop-up: Detallar resolución de imagen.</label>
+            </div>
+        </div>
+    </div>
+
+    <!-- COLUMNA DANI -->
+    <div class="column dani">
+        <div class="column-header">
+            <h2>👤 Dani</h2>
+            <span class="badge">Tareas: 2, 3, 9</span>
+        </div>
+
+        <!-- 2. Página evento individual -->
+        <div class="task-group">
+            <div class="main-task">
+                <input type="checkbox" id="dani-task2">
+                <label for="dani-task2">2. Página evento individual:</label>
+            </div>
+            <div class="sub-tasks">
+                <div class="sub-task">
+                    <input type="checkbox" id="dani-task2-1">
+                    <label for="dani-task2-1">Añadir vídeos / carrusel de imágenes (deben salir al crear evento).</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Formulario -->
+        <div class="task-group">
+            <div class="main-task">
+                <input type="checkbox" id="dani-task3">
+                <label for="dani-task3">3. Formulario:</label>
+            </div>
+            <div class="sub-tasks">
+                <div class="sub-task">
+                    <input type="checkbox" id="dani-task3-1">
+                    <label for="dani-task3-1">Añadir campo código centro y demás campos del form.</label>
+                </div>
+                <div class="sub-task">
+                    <input type="checkbox" id="dani-task3-2">
+                    <label for="dani-task3-2">En el resumen: permitir ver lo que se ha elegido.</label>
+                </div>
+                <div class="sub-task">
+                    <input type="checkbox" id="dani-task3-3">
+                    <label for="dani-task3-3">Al reservar: ver 2 pases o los que haya.</label>
+                </div>
+                <div class="sub-task">
+                    <input type="checkbox" id="dani-task3-4">
+                    <label for="dani-task3-4">Al enviar: redirigir a inicio.</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- 9. Formulario / Notificaciones -->
+        <div class="task-group">
+            <div class="main-task">
+                <input type="checkbox" id="dani-task9">
+                <label for="dani-task9">9. Formulario / Notificaciones:</label>
+            </div>
+            <div class="sub-tasks">
+                <div class="sub-task">
+                    <input type="checkbox" id="dani-task9-1">
+                    <label for="dani-task9-1">Cada recinto tiene un correo al que se le envían las reservas.</label>
+                </div>
+                <div class="sub-task">
+                    <input type="checkbox" id="dani-task9-2">
+                    <label for="dani-task9-2">Se envía al correo de educaescena y al que ponga el usuario en el form.</label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
