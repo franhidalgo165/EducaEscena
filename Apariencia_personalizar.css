@@ -1,0 +1,11 @@
+#tribe-events-pg-template{
+    max-width: 100%!important;
+    padding: 0 !important;
+}
+html, body {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+}
+.elementor-alert {
+    border-radius: 20px !important;
+}
