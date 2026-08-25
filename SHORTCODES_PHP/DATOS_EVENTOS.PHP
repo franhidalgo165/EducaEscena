@@ -105,7 +105,7 @@ function shortcode_eventos_sede_horizontal_completo() {
 
             $fecha = tribe_get_start_date($id, false, 'd \d\e F');
             $hora = tribe_get_start_date($id, false, 'H:i');
-            $lugar = tribe_get_venue($id);
+            $lugar = (($t = get_the_terms($id, 'recinto')) && !is_wp_error($t)) ? $t[0]->name : '';
             $org = tribe_get_organizer($id);
             $precio = tribe_get_cost($id);
             $precio = (!empty($precio) && is_numeric($precio)) ? $precio . '€' : (empty($precio) || $precio == '0' ? 'Gratuito' : $precio);

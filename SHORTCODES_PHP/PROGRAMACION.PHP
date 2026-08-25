@@ -98,7 +98,7 @@ function shortcode_programacion_general_meses() {
             $organizador = tribe_get_organizer($id);
             $fecha = tribe_get_start_date($id, false, 'd \d\e F');
             $hora = tribe_get_start_date($id, false, 'H:i');
-            $lugar = tribe_get_venue($id);
+            $lugar = (($t = get_the_terms($id, 'recinto')) && !is_wp_error($t)) ? $t[0]->name : '';
             $precio_raw = tribe_get_cost($id);
             $precio = (!empty($precio_raw) && is_numeric($precio_raw)) ? $precio_raw . '€' : ($precio_raw == '0' || empty($precio_raw) ? 'Gratuito' : $precio_raw);
 
