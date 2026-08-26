@@ -1,5 +1,5 @@
 // ==========================================
-// 1. SHORTCODE DE RESUMEN Y TARJETA DEL EVENTO
+// 1. SHORTCODE DE RESUMEN Y TARJETA DEL EVENTO (Con Precio Numérico Oculto)
 // ==========================================
 function get_evento_info_shortcode() {
     if ( ! function_exists( 'tribe_get_venue' ) ) {
@@ -13,9 +13,9 @@ function get_evento_info_shortcode() {
     }
 
     if ( $evento_id && get_post_type( $evento_id ) === 'tribe_events' ) {
-        $titulo         = get_the_title( $evento_id );
-        $fecha          = tribe_get_start_date( $evento_id, false, 'd/m/Y' );
-        $hora           = tribe_get_start_date( $evento_id, false, 'H:i' );
+        $titulo          = get_the_title( $evento_id );
+        $fecha           = tribe_get_start_date( $evento_id, false, 'd/m/Y' );
+        $hora            = tribe_get_start_date( $evento_id, false, 'H:i' );
         
         $terminos_edad   = strip_tags( get_the_term_list( $evento_id, 'edad', '', ', ', '' ) );
         $terminos_idioma = strip_tags( get_the_term_list( $evento_id, 'idioma', '', ', ', '' ) );
@@ -26,14 +26,17 @@ function get_evento_info_shortcode() {
             $lugar = ! empty( $terminos_sedes ) ? $terminos_sedes : get_post_meta( $evento_id, '_EventVenue', true );
         }
 
-        // Gestión inteligente del precio (Gratuito o de pago)
+        // Gestión inteligente y limpia del precio
         $precio_raw = tribe_get_cost( $evento_id, true );
-        $precio_limpio = trim( str_replace( array('€', '$', '£', 'EUR'), '', $precio_raw ) );
+        $precio_limpio_str = trim( str_replace( array('€', '$', '£', 'EUR'), '', $precio_raw ) );
 
-        if ( empty( $precio_raw ) || $precio_limpio === '' || floatval( $precio_limpio ) === 0.0 || stripos( $precio_raw, 'gratis' ) !== false || stripos( $precio_raw, 'free' ) !== false ) {
+        $precio_num = 0;
+        if ( empty( $precio_raw ) || $precio_limpio_str === '' || stripos( $precio_raw, 'gratis' ) !== false || stripos( $precio_raw, 'free' ) !== false ) {
             $precio = 'Gratuito';
+            $precio_num = 0;
         } else {
             $precio = $precio_raw;
+            $precio_num = floatval( str_replace(',', '.', $precio_limpio_str) );
         }
 
         // Capturar de forma segura si el usuario envió el dato por POST
@@ -45,24 +48,19 @@ function get_evento_info_shortcode() {
             $pase_elegido = get_transient( 'pase_usuario_' . get_current_user_id() );
         }
         
-        $output  = '<div class="evento-resumen-pro" style="font-family: Raleway, sans-serif; background:#f4f7f7; padding:20px; border-radius:12px; border: 1px solid #A0CED4; color: #1D1E1C;">';
+        // Renderizamos la tarjeta incluyendo un atributo oculto `data-precio` con el valor exacto para JavaScript
+        $output  = '<div class="evento-resumen-pro" data-precio-num="' . esc_attr( $precio_num ) . '" style="font-family: Raleway, sans-serif; background:#f4f7f7; padding:20px; border-radius:12px; border: 1px solid #A0CED4; color: #1D1E1C;">';
         $output .= '<h3 style="margin-top:0; color: #198C9C; font-weight: 700; font-size: 20px;">' . esc_html( $titulo ) . '</h3>';
         
-        // 1. Pase Seleccionado (Arriba del todo)
+        // 1. Pase Seleccionado
         $output .= '<p style="margin: 8px 0; background: #e2f0f1; padding: 8px 12px; border-radius: 6px; color: #198C9C;"><strong>Pase Seleccionado:</strong> <span id="resumen-pase-real" style="font-weight:700;">' . ( !empty($pase_elegido) ? esc_html($pase_elegido) : 'Seleccionando pase...' ) . '</span></p>';
 
-        // 2. Fecha
+        // 2. Fecha, Edad, Idioma, Sede, Lugar, Precio
         $output .= '<p style="margin: 5px 0;"><strong>Fecha:</strong> ' . esc_html( $fecha ) . '</p>';
-
-        // 3. Edad
         $output .= '<p style="margin: 5px 0;"><strong>Edad:</strong> ' . esc_html( $terminos_edad ) . '</p>';
-
-        // 4. Idioma (Taxonomía 'idioma' justo debajo de la edad)
         if ( ! empty( $terminos_idioma ) ) {
             $output .= '<p style="margin: 5px 0;"><strong>Idioma:</strong> ' . esc_html( $terminos_idioma ) . '</p>';
         }
-
-        // 5. Sede, Lugar y Precio
         $output .= '<p style="margin: 5px 0;"><strong>Sede:</strong> ' . esc_html( $terminos_sedes ) . '</p>';
         $output .= '<p style="margin: 5px 0;"><strong>Lugar:</strong> ' . esc_html( $lugar ) . '</p>';
         $output .= '<p style="margin: 5px 0;"><strong>Precio:</strong> ' . esc_html( $precio ) . '</p>';
@@ -77,7 +75,7 @@ add_shortcode( 'info_evento', 'get_evento_info_shortcode' );
 
 
 // ==========================================
-// 2. EXTRACCIÓN REAL DE PASES HERMANOS PARA FORMINATOR
+// 2. EXTRACCIÓN REAL DE PASES Y CÁLCULO DE IMPORTE EN EL FOOTER
 // ==========================================
 add_action( 'wp_footer', function() {
     if ( ! is_singular( 'tribe_events' ) ) {
@@ -120,7 +118,6 @@ add_action( 'wp_footer', function() {
                 $f_texto = tribe_get_start_date( $p_id, false, 'd M Y' );
                 $h_texto = tribe_get_start_date( $p_id, false, 'H:i' ) . 'h';
                 
-                // Texto limpio sin la palabra "Función:"
                 $pases_array[] = array(
                     'raw'   => $inicio_raw,
                     'texto' => $f_texto . " a las " . $h_texto
@@ -196,7 +193,7 @@ add_action( 'wp_footer', function() {
                     });
                 }
 
-                // 2. Si estamos en la pestaña de resumen, buscar el radio button marcado físicamente en el DOM
+                // 2. Sincronizar texto del pase en el resumen
                 const spanResumen = document.getElementById("resumen-pase-real");
                 if (spanResumen) {
                     let seleccionadoDOM = document.querySelector('input[name="pase_seleccionado"]:checked');
@@ -210,6 +207,31 @@ add_action( 'wp_footer', function() {
                     } else if (pasesDisponibles.length > 0) {
                         spanResumen.innerText = pasesDisponibles[0];
                     }
+                }
+
+                // 3. CÁLCULO PRECISO DEL IMPORTE TOTAL (Leyendo el atributo data-precio-num directo de PHP)
+                let precioNum = 0;
+                let elemResumenPro = document.querySelector(".evento-resumen-pro");
+                if (elemResumenPro && elemResumenPro.hasAttribute("data-precio-num")) {
+                    precioNum = parseFloat(elemResumenPro.getAttribute("data-precio-num")) || 0;
+                }
+
+                // Sumar estrictamente las plazas de los alumnos (excluyendo docentes {number-14})
+                let idsAlumnos = ['number-1', 'number-2', 'number-5', 'number-4', 'number-3', 'number-7', 'number-8', 'number-9', 'number-10', 'number-11'];
+                let totalAlumnos = 0;
+
+                idsAlumnos.forEach(function(id) {
+                    let input = document.querySelector('input[name="' + id + '"]');
+                    if (input) {
+                        totalAlumnos += parseInt(input.value) || 0;
+                    }
+                });
+
+                let importeFinal = totalAlumnos * precioNum;
+
+                let spanImporte = document.getElementById("calculo-importe-total");
+                if (spanImporte) {
+                    spanImporte.innerText = importeFinal.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
                 }
             }
 
