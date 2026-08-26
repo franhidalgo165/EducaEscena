@@ -36,7 +36,7 @@ function indgenio_guardar_imagen_sede( $term_id ) {
 
 
 // ==========================================
-// 2. SHORTCODE INDEPENDIENTE PARA LAS TARJETAS AUTOMÁTICAS
+// 2. SHORTCODE DE TARJETAS DE SEDES CON ANIMACIÓN ULTRA SUAVE Y LENTA
 // ==========================================
 add_shortcode( 'tarjetas_sedes_educaescena', function() {
     $sedes = get_terms( array(
@@ -48,9 +48,43 @@ add_shortcode( 'tarjetas_sedes_educaescena', function() {
         return '<p style="font-family: Raleway, sans-serif;">No hay sedes creadas todavía.</p>';
     }
 
-    // Estilos CSS para centrar en móvil/tablet
+    $hoy = current_time( 'Y-m-d H:i:s' );
+
+    // Estilos CSS con transición ultra suave, 1.6s de duración y desplazamiento corto
     $output = '
     <style>
+        @keyframes ultraSmoothFadeInUp {
+            0% {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .indgenio-sede-card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 220px;
+            opacity: 0;
+            animation: ultraSmoothFadeInUp 1.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        /* Retraso escalonado sutil y gradual entre tarjetas */
+        .indgenio-sede-card:nth-child(1) { animation-delay: 0.25s; }
+        .indgenio-sede-card:nth-child(2) { animation-delay: 0.5s; }
+        .indgenio-sede-card:nth-child(3) { animation-delay: 0.75s; }
+        .indgenio-sede-card:nth-child(4) { animation-delay: 1.0s; }
+        .indgenio-sede-card:nth-child(5) { animation-delay: 1.25s; }
+        .indgenio-sede-card:nth-child(n+6) { animation-delay: 1.5s; }
+
         @media (max-width: 1024px) {
             .indgenio-sede-card-header,
             .indgenio-sede-card-header div {
@@ -64,25 +98,15 @@ add_shortcode( 'tarjetas_sedes_educaescena', function() {
 
     $output .= '<div style="font-family: Raleway, sans-serif; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px;">';
 
-    $hoy = current_time( 'Y-m-d H:i:s' );
-
     foreach ( $sedes as $sede ) {
         $sede_url = get_term_link( $sede );
         $sede_imagen = get_term_meta( $sede->term_id, 'imagen_sede', true );
 
-        // Recuento de eventos activos desde el día actual en adelante (excluyendo pasados)
+        // Consulta de eventos para esta sede (sin duplicar pases)
         $args_eventos = array(
             'post_type'      => 'tribe_events',
             'posts_per_page' => -1,
             'post_status'    => 'publish',
-            'meta_query'     => array(
-                array(
-                    'key'     => '_EventEndDate',
-                    'value'   => $hoy,
-                    'compare' => '>=',
-                    'type'    => 'DATETIME',
-                ),
-            ),
             'tax_query'      => array(
                 array(
                     'taxonomy' => 'sedes',
@@ -92,13 +116,30 @@ add_shortcode( 'tarjetas_sedes_educaescena', function() {
             ),
         );
         $query_eventos = new WP_Query( $args_eventos );
-        $num_eventos = $query_eventos->found_posts;
-        wp_reset_postdata();
+        
+        $eventos_unicos = array();
+        if ( $query_eventos->have_posts() ) {
+            while ( $query_eventos->have_posts() ) {
+                $query_eventos->the_post();
+                $id = get_the_ID();
+                $titulo = get_the_title();
+                $clave_grupo = sanitize_title( $titulo );
+                $inicio_raw = get_post_meta( $id, '_EventStartDate', true );
 
+                if ( $inicio_raw >= $hoy ) {
+                    if ( ! isset( $eventos_unicos[$clave_grupo] ) ) {
+                        $eventos_unicos[$clave_grupo] = true;
+                    }
+                }
+            }
+            wp_reset_postdata();
+        }
+
+        $num_eventos = count( $eventos_unicos );
         $texto_funcion = ( $num_eventos === 1 ) ? 'Función' : 'Funciones';
 
         // Estructura de la tarjeta
-        $output .= '<div style="background: #ffffff; border-radius: 16px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); display: flex; flex-direction: column; justify-content: space-between; min-height: 220px;">';
+        $output .= '<div class="indgenio-sede-card">';
             
             // Cabecera: Logo y Título
             $output .= '<div class="indgenio-sede-card-header">';
@@ -113,12 +154,12 @@ add_shortcode( 'tarjetas_sedes_educaescena', function() {
             // Pie de tarjeta: Píldora de funciones y enlace Ver
             $output .= '<div style="display: flex; align-items: center; justify-content: space-between; margin-top: 20px; border-top: 1px solid #f0f0f0; padding-top: 15px;">';
                 
-                // Píldora del contador (con el color #198C9C)
+                // Píldora del contador real de espectáculos
                 $output .= '<a href="' . esc_url( $sede_url ) . '" target="_blank" style="background: #e2f0f1; color: #198C9C; padding: 8px 20px; border-radius: 20px; font-size: 14px; text-align: center; text-decoration: none; display: inline-block; font-family: Raleway, sans-serif;">';
                     $output .= '<strong style="font-size: 16px; font-weight: 800; color: #198C9C;">' . $num_eventos . '</strong> <span style="font-size: 12px; font-weight: 500;">' . $texto_funcion . '</span>';
                 $output .= '</a>';
                 
-                // Enlace Ver -> (con el color #198C9C)
+                // Enlace Ver ->
                 $output .= '<a href="' . esc_url( $sede_url ) . '" target="_blank" style="color: #198C9C; text-decoration: none; font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 5px; font-family: Raleway, sans-serif;">Ver &rarr;</a>';
             
             $output .= '</div>';
