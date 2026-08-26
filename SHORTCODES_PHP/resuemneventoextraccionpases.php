@@ -63,7 +63,7 @@ function get_evento_info_shortcode() {
         }
         $output .= '<p style="margin: 5px 0;"><strong>Sede:</strong> ' . esc_html( $terminos_sedes ) . '</p>';
         $output .= '<p style="margin: 5px 0;"><strong>Lugar:</strong> ' . esc_html( $lugar ) . '</p>';
-        $output .= '<p style="margin: 5px 0;"><strong>Precio:</strong> ' . esc_html( $precio ) . '</p>';
+        $output .= '<p style="margin: 5px 0;"><strong>Precio/Entrada:</strong> ' . esc_html( $precio ) . '</p>';
         $output .= '</div>';
         
         return $output;
