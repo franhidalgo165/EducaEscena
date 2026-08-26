@@ -17,15 +17,24 @@ function get_evento_info_shortcode() {
         $fecha          = tribe_get_start_date( $evento_id, false, 'd/m/Y' );
         $hora           = tribe_get_start_date( $evento_id, false, 'H:i' );
         
-        $terminos_edad  = strip_tags( get_the_term_list( $evento_id, 'edad', '', ', ', '' ) );
-        $terminos_sedes = strip_tags( get_the_term_list( $evento_id, 'sedes', '', ', ', '' ) );
+        $terminos_edad   = strip_tags( get_the_term_list( $evento_id, 'edad', '', ', ', '' ) );
+        $terminos_idioma = strip_tags( get_the_term_list( $evento_id, 'idioma', '', ', ', '' ) );
+        $terminos_sedes  = strip_tags( get_the_term_list( $evento_id, 'sedes', '', ', ', '' ) );
         
         $lugar = tribe_get_venue( $evento_id );
         if ( empty( $lugar ) ) {
             $lugar = ! empty( $terminos_sedes ) ? $terminos_sedes : get_post_meta( $evento_id, '_EventVenue', true );
         }
 
-        $precio = tribe_get_cost( $evento_id, true );
+        // Gestión inteligente del precio (Gratuito o de pago)
+        $precio_raw = tribe_get_cost( $evento_id, true );
+        $precio_limpio = trim( str_replace( array('€', '$', '£', 'EUR'), '', $precio_raw ) );
+
+        if ( empty( $precio_raw ) || $precio_limpio === '' || floatval( $precio_limpio ) === 0.0 || stripos( $precio_raw, 'gratis' ) !== false || stripos( $precio_raw, 'free' ) !== false ) {
+            $precio = 'Gratuito';
+        } else {
+            $precio = $precio_raw;
+        }
 
         // Capturar de forma segura si el usuario envió el dato por POST
         $pase_elegido = '';
@@ -38,12 +47,22 @@ function get_evento_info_shortcode() {
         
         $output  = '<div class="evento-resumen-pro" style="font-family: Raleway, sans-serif; background:#f4f7f7; padding:20px; border-radius:12px; border: 1px solid #A0CED4; color: #1D1E1C;">';
         $output .= '<h3 style="margin-top:0; color: #198C9C; font-weight: 700; font-size: 20px;">' . esc_html( $titulo ) . '</h3>';
-        $output .= '<p style="margin: 5px 0;"><strong>Fecha:</strong> ' . esc_html( $fecha ) . '</p>';
         
-        // Este span se actualizará al vuelo mediante JS leyendo la opción marcada en el formulario
+        // 1. Pase Seleccionado (Arriba del todo)
         $output .= '<p style="margin: 8px 0; background: #e2f0f1; padding: 8px 12px; border-radius: 6px; color: #198C9C;"><strong>Pase Seleccionado:</strong> <span id="resumen-pase-real" style="font-weight:700;">' . ( !empty($pase_elegido) ? esc_html($pase_elegido) : 'Seleccionando pase...' ) . '</span></p>';
 
+        // 2. Fecha
+        $output .= '<p style="margin: 5px 0;"><strong>Fecha:</strong> ' . esc_html( $fecha ) . '</p>';
+
+        // 3. Edad
         $output .= '<p style="margin: 5px 0;"><strong>Edad:</strong> ' . esc_html( $terminos_edad ) . '</p>';
+
+        // 4. Idioma (Taxonomía 'idioma' justo debajo de la edad)
+        if ( ! empty( $terminos_idioma ) ) {
+            $output .= '<p style="margin: 5px 0;"><strong>Idioma:</strong> ' . esc_html( $terminos_idioma ) . '</p>';
+        }
+
+        // 5. Sede, Lugar y Precio
         $output .= '<p style="margin: 5px 0;"><strong>Sede:</strong> ' . esc_html( $terminos_sedes ) . '</p>';
         $output .= '<p style="margin: 5px 0;"><strong>Lugar:</strong> ' . esc_html( $lugar ) . '</p>';
         $output .= '<p style="margin: 5px 0;"><strong>Precio:</strong> ' . esc_html( $precio ) . '</p>';
@@ -101,9 +120,10 @@ add_action( 'wp_footer', function() {
                 $f_texto = tribe_get_start_date( $p_id, false, 'd M Y' );
                 $h_texto = tribe_get_start_date( $p_id, false, 'H:i' ) . 'h';
                 
+                // Texto limpio sin la palabra "Función:"
                 $pases_array[] = array(
                     'raw'   => $inicio_raw,
-                    'texto' => "Función: " . $f_texto . " a las " . $h_texto
+                    'texto' => $f_texto . " a las " . $h_texto
                 );
             }
         }
@@ -124,7 +144,7 @@ add_action( 'wp_footer', function() {
     }
 
     if ( empty( $lista_final_pases ) ) {
-        $lista_final_pases[] = "Función: " . tribe_get_start_date( $current_id, false, 'd M Y' ) . " a las " . tribe_get_start_date( $current_id, false, 'H:i' ) . "h";
+        $lista_final_pases[] = tribe_get_start_date( $current_id, false, 'd M Y' ) . " a las " . tribe_get_start_date( $current_id, false, 'H:i' ) . "h";
     }
     ?>
     <script type="text/javascript">
@@ -155,7 +175,6 @@ add_action( 'wp_footer', function() {
                             }
                         }
 
-                        // Cada vez que cambie, guardamos al instante en localStorage
                         input.addEventListener("change", function() {
                             if (this.checked) {
                                 localStorage.setItem("pase_seleccionado_form", this.value);
@@ -194,7 +213,6 @@ add_action( 'wp_footer', function() {
                 }
             }
 
-            // Ejecutar de forma continua para capturar los cambios de pestaña de Forminator al vuelo
             setInterval(sincronizarTodo, 200);
         })();
     </script>
