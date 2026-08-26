@@ -77,8 +77,8 @@ function shortcode_eventos_sede_horizontal_completo() {
         .app-separador-pipe { color: #cbd5e1; font-weight: 300; margin: 0 2px; }
 
         .app-card-boton-box { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 5px; }
-        .app-card-btn { display: inline-block; background-color: #0e7490; color: #ffffff !important; padding: 12px 24px; border-radius: 30px; font-family: "Raleway", sans-serif !important; font-size: 16px !important; font-weight: 700 !important; text-decoration: none !important; white-space: nowrap; transition: background-color 0.2s ease; }
-        .app-card-btn:hover { background-color: #0891b2; }
+        .app-card-btn { display: inline-block; background-color: #0e7490; color: #ffffff !important; padding: 12px 24px; border-radius: 30px; font-family: "Raleway", sans-serif !important; font-size: 16px !important; font-weight: 700 !important; text-decoration: none !important; white-space: nowrap; transition: background-color 0.2s ease; cursor: pointer; border: none; text-align: center; }
+        .app-card-btn:hover { background-color: #0891b2; color: #ffffff !important; text-decoration: none !important; }
         
         .app-estado-container { font-family: "Raleway", sans-serif !important; font-size: 13px !important; color: #4a5568; margin-top: 5px; }
         .estado-disponible { color: #2f855a !important; font-weight: 800 !important; }
@@ -116,7 +116,7 @@ function shortcode_eventos_sede_horizontal_completo() {
                     'duracion'    => (($t = get_the_terms($id, 'duracion')) && !is_wp_error($t)) ? $t[0]->name : '',
                     'estado'      => (($t = get_the_terms($id, 'estado_pases')) && !is_wp_error($t)) ? $t[0]->name : '',
                     'organizador' => tribe_get_organizer($id),
-                    'lugar'       => tribe_get_venue($id), // Actualizado al sistema nativo de TEC
+                    'lugar'       => tribe_get_venue($id),
                     'precio'      => tribe_get_cost($id),
                     'pases'       => array()
                 );
@@ -163,7 +163,13 @@ function shortcode_eventos_sede_horizontal_completo() {
                 }
 
                 $precio_raw = $evento['precio'];
-                $precio = (!empty($precio_raw) && is_numeric($precio_raw)) ? $precio_raw . '€' : (empty($precio_raw) || $precio_raw == '0' ? 'Gratuito' : $precio_raw);
+                $precio_limpio = trim( str_replace( array('€', '$', '£', 'EUR'), '', $precio_raw ) );
+                if ( empty( $precio_raw ) || $precio_limpio === '' || floatval( $precio_limpio ) === 0.0 || stripos( $precio_raw, 'gratis' ) !== false || stripos( $precio_raw, 'free' ) !== false ) {
+                    $precio = 'Gratuito';
+                } else {
+                    $precio = $precio_raw;
+                }
+
                 $clase_estado = (strtolower($evento['estado']) == 'ocupado') ? 'estado-ocupado' : 'estado-disponible';
 
                 // Banderas SVG
@@ -200,7 +206,7 @@ function shortcode_eventos_sede_horizontal_completo() {
                 $html .= '          <div class="app-card-detalles">';
                 
                 if (!empty($pases_por_dia)) {
-                    $html .= '          <div class="app-detalle-linea"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> Pases:';
+                    $html .= '          <div class="app-detalle-linea" style="align-items: flex-start;"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-top: 3px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> Pases:';
                     $html .= '          <div class="app-pases-lista-vertical">';
                     
                     foreach ($pases_por_dia as $dia) {
@@ -209,7 +215,7 @@ function shortcode_eventos_sede_horizontal_completo() {
                         
                         $total_horas = count($dia['horas']);
                         foreach ($dia['horas'] as $idx => $h) {
-                            $html .= '          <a href="' . esc_url($h['enlace']) . '" target="_blank" class="app-hora-enlace">' . esc_html($h['hora']) . '</a>';
+                            $html .= '          <span class="app-hora-enlace">' . esc_html($h['hora']) . '</span>';
                             if ($idx < $total_horas - 1) {
                                 $html .= '      <span class="app-separador-pipe">|</span>';
                             }
@@ -229,8 +235,10 @@ function shortcode_eventos_sede_horizontal_completo() {
                 $html .= '          </div>';
                 $html .= '      </div>';
                 
+                // EL BOTÓN ABRE EN OTRA PESTAÑA CON target="_blank" Y AÑADE ?abrir_modal=1
+                $enlace_reserva = esc_url( $evento['enlace'] . ( strpos($evento['enlace'], '?') !== false ? '&' : '?' ) . 'abrir_modal=1' );
                 $html .= '      <div class="app-card-boton-box">';
-                $html .= '          <a href="' . esc_url($evento['enlace']) . '" target="_blank" class="app-card-btn">Reservar</a>';
+                $html .= '          <a href="' . $enlace_reserva . '" target="_blank" class="app-card-btn">Reservar</a>';
                 if ($evento['estado']) {
                     $html .= '      <div class="app-estado-container">Estado: <span class="' . $clase_estado . '">' . esc_html($evento['estado']) . '</span></div>';
                 }
@@ -238,6 +246,7 @@ function shortcode_eventos_sede_horizontal_completo() {
                 $html .= '  </div>';
                 $html .= '</div>';
             }
+
         } else {
             $html .= '<p style="font-family:\'Raleway\',sans-serif; text-align:center;">No hay eventos próximos programados en esta sede.</p>';
         }

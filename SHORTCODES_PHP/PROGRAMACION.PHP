@@ -1,7 +1,9 @@
+// ==========================================
+// 1. SHORTCODE DE PROGRAMACIÓN GENERAL DE MESES
+// ==========================================
 function shortcode_programacion_general_meses() {
     $fecha_actual = current_time('Y-m-d H:i:s');
 
-    // 1. CONSULTA DE TODOS LOS EVENTOS ACTIVOS
     $args = array(
         'post_type'      => 'tribe_events',
         'posts_per_page' => -1,
@@ -21,7 +23,6 @@ function shortcode_programacion_general_meses() {
 
     $query = new WP_Query($args);
     
-    // 2. ESTILOS CSS
     $html = '
     <style>
         .app-programacion-container { display: flex; flex-direction: column; width: 100%; box-sizing: border-box; }
@@ -29,45 +30,33 @@ function shortcode_programacion_general_meses() {
         .app-mes-header:first-child { margin-top: 0 !important; }
         .app-card-evento { display: flex; flex-direction: row; align-items: stretch; background: #ffffff; border-radius: 16px; border: 1px solid #edf2f7; box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.03); width: 100%; box-sizing: border-box; transition: transform 0.2s ease, box-shadow 0.2s ease; overflow: hidden; margin-bottom: 35px; }
         .app-card-evento:hover { transform: translateY(-2px); box-shadow: 0px 6px 25px rgba(0, 0, 0, 0.06); }
-        
-        /* CONTENEDOR Y RECORTE FIJO DE LA IMAGEN */
         .app-card-img-box { width: 300px; min-height: 100%; flex-shrink: 0; display: flex; overflow: hidden; background-color: #0e7490; }
         .app-card-img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
-        
         .app-card-content-box { width: 70%; display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 20px 24px; box-sizing: border-box; }
         .app-card-textos { display: flex; flex-direction: column; gap: 8px; flex-grow: 1; }
         .app-header-titulo-box { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 4px; }
-        
         .app-titulo-link { text-decoration: none !important; color: #1a202c !important; transition: color 0.3s ease; }
         .app-titulo-link:hover .app-card-titulo { color: #198C9C !important; }
         .app-card-titulo { font-family: "Raleway", sans-serif !important; font-size: 24px !important; font-weight: 600 !important; margin: 0 !important; }
-        
         .app-card-badge { display: inline-flex; align-items: center; font-family: "Raleway", sans-serif !important; font-size: 11px !important; font-weight: 700 !important; color: #ffffff !important; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1; }
         .app-card-badge svg { margin-right: 6px; width: 14px; height: 14px; border-radius: 2px; }
         .badge-idioma { background: #0e7490; }
         .badge-edad { background: #4a5568; padding-top:6px; padding-bottom: 6px;}
-        
         .app-card-detalles { display: flex; flex-direction: column; gap: 8px; font-family: "Raleway", sans-serif !important; font-size: 15px !important; color: #4a5568 !important; margin: 0 !important; }
         .app-detalle-linea { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
         .app-detalle-linea svg { color: #A0CED4; flex-shrink: 0; }
         .app-detalle-precio { font-weight: 700 !important; color: #0e7490 !important; }
-        
-        /* Lista vertical de pases sin fondo */
         .app-pases-lista-vertical { display: flex; flex-direction: column; gap: 4px; width: 100%; margin-top: 2px; }
         .app-dia-fila { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
         .app-dia-texto { font-weight: 600; color: #4a5568; }
-        .app-hora-enlace { color: #198C9C !important; font-weight: 600; text-decoration: none !important; transition: color 0.2s; }
-        .app-hora-enlace:hover { color: #0e7490 !important; text-decoration: underline !important; }
+        .app-hora-enlace { color: #198C9C !important; font-weight: 600; text-decoration: none !important; }
         .app-separador-pipe { color: #cbd5e1; font-weight: 300; margin: 0 2px; }
-
         .app-card-boton-box { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 5px; }
-        .app-card-btn { display: inline-block; background-color: #0e7490; color: #ffffff !important; padding: 12px 24px; border-radius: 30px; font-family: "Raleway", sans-serif !important; font-size: 16px !important; font-weight: 700 !important; text-decoration: none !important; white-space: nowrap; transition: background-color 0.2s ease; }
-        .app-card-btn:hover { background-color: #0891b2; }
-        
+        .app-card-btn { display: inline-block; background-color: #0e7490; color: #ffffff !important; padding: 12px 24px; border-radius: 30px; font-family: "Raleway", sans-serif !important; font-size: 16px !important; font-weight: 700 !important; text-decoration: none !important; white-space: nowrap; transition: background-color 0.2s ease; cursor: pointer; border: none; text-align: center; }
+        .app-card-btn:hover { background-color: #0891b2; color: #ffffff !important; text-decoration: none !important; }
         .app-estado-container { font-family: "Raleway", sans-serif !important; font-size: 13px !important; color: #4a5568; margin-top: 5px; }
         .estado-disponible { color: #2f855a !important; font-weight: 800 !important; }
         .estado-ocupado { color: #c53030 !important; font-weight: 800 !important; }
-
         @media (max-width: 768px) { 
             .app-card-evento { flex-direction: column; } 
             .app-card-img-box { width: 100%; height: 200px; min-height: 200px; } 
@@ -99,19 +88,19 @@ function shortcode_programacion_general_meses() {
                     'duracion'    => (($t = get_the_terms($id, 'duracion')) && !is_wp_error($t)) ? $t[0]->name : '',
                     'estado'      => (($t = get_the_terms($id, 'estado_pases')) && !is_wp_error($t)) ? $t[0]->name : '',
                     'organizador' => tribe_get_organizer($id),
-                    'lugar'       => tribe_get_venue($id), // Actualizado a sistema nativo de TEC
+                    'lugar'       => tribe_get_venue($id),
                     'precio'      => tribe_get_cost($id),
                     'pases'       => array()
                 );
             }
 
             $eventos_agrupados[$clave_grupo]['pases'][] = array(
-                'id'    => $id,
+                'id'        => $id,
                 'fecha_key' => date('Y-m-d', strtotime($inicio_raw)),
-                'fecha' => tribe_get_start_date($id, false, 'd M'),
-                'hora'  => tribe_get_start_date($id, false, 'H:i') . 'h',
-                'enlace'=> get_permalink($id),
-                'raw'   => $inicio_raw
+                'fecha'     => tribe_get_start_date($id, false, 'd M'),
+                'hora'      => tribe_get_start_date($id, false, 'H:i') . 'h',
+                'enlace'    => get_permalink($id),
+                'raw'       => $inicio_raw
             );
         }
         wp_reset_postdata();
@@ -128,7 +117,7 @@ function shortcode_programacion_general_meses() {
 
         $mes_actual_tracker = '';
 
-        foreach ($eventos_agrupados as $evento) {
+        foreach ($eventos_agrupados as $clave_grupo => $evento) {
             $primer_pase_raw = $evento['pases'][0]['raw'];
             $mes_anio_key = date('Y-m', strtotime($primer_pase_raw));
             
@@ -139,7 +128,13 @@ function shortcode_programacion_general_meses() {
             }
 
             $precio_raw = $evento['precio'];
-            $precio = (!empty($precio_raw) && is_numeric($precio_raw)) ? $precio_raw . '€' : ($precio_raw == '0' || empty($precio_raw) ? 'Gratuito' : $precio_raw);
+            $precio_limpio = trim( str_replace( array('€', '$', '£', 'EUR'), '', $precio_raw ) );
+            if ( empty( $precio_raw ) || $precio_limpio === '' || floatval( $precio_limpio ) === 0.0 || stripos( $precio_raw, 'gratis' ) !== false || stripos( $precio_raw, 'free' ) !== false ) {
+                $precio = 'Gratuito';
+            } else {
+                $precio = $precio_raw;
+            }
+
             $clase_estado = (strtolower($evento['estado']) == 'ocupado') ? 'estado-ocupado' : 'estado-disponible';
 
             // Banderas SVG
@@ -153,7 +148,7 @@ function shortcode_programacion_general_meses() {
                 }
             }
 
-            // Agrupar los pases por día (Fecha Key)
+            // Agrupar los pases por día
             $pases_por_dia = array();
             foreach ($evento['pases'] as $p) {
                 $pases_por_dia[$p['fecha_key']]['fecha_formateada'] = $p['fecha'];
@@ -186,7 +181,7 @@ function shortcode_programacion_general_meses() {
                     
                     $total_horas = count($dia['horas']);
                     foreach ($dia['horas'] as $idx => $h) {
-                        $html .= '          <a href="' . esc_url($h['enlace']) . '" target="_blank" class="app-hora-enlace">' . esc_html($h['hora']) . '</a>';
+                        $html .= '          <span class="app-hora-enlace">' . esc_html($h['hora']) . '</span>';
                         if ($idx < $total_horas - 1) {
                             $html .= '      <span class="app-separador-pipe">|</span>';
                         }
@@ -206,9 +201,10 @@ function shortcode_programacion_general_meses() {
             $html .= '          </div>';
             $html .= '      </div>';
             
-            // Botón y Estado
+            // EL BOTÓN ABRE EN OTRA PESTAÑA CON target="_blank" Y AÑADE ?abrir_modal=1
+            $enlace_reserva = esc_url( $evento['enlace'] . ( strpos($evento['enlace'], '?') !== false ? '&' : '?' ) . 'abrir_modal=1' );
             $html .= '      <div class="app-card-boton-box">';
-            $html .= '          <a href="' . esc_url($evento['enlace']) . '" target="_blank" class="app-card-btn">Reservar</a>';
+            $html .= '          <a href="' . $enlace_reserva . '" target="_blank" class="app-card-btn">Reservar</a>';
             if ($evento['estado']) {
                 $html .= '      <div class="app-estado-container">Estado: <span class="' . $clase_estado . '">' . esc_html($evento['estado']) . '</span></div>';
             }
@@ -216,6 +212,7 @@ function shortcode_programacion_general_meses() {
             $html .= '  </div>';
             $html .= '</div>';
         }
+
     } else {
         $html .= '<p style="font-family:\'Raleway\',sans-serif; text-align:center;">No hay eventos próximos programados.</p>';
     }
@@ -224,3 +221,37 @@ function shortcode_programacion_general_meses() {
     return $html;
 }
 add_shortcode('programacion_general_eventos', 'shortcode_programacion_general_meses');
+
+
+// ==========================================
+// 2. SCRIPT EN EL FOOTER PARA ABRIR EL POPUP DE ELEMENTOR AUTOMÁTICAMENTE
+// ==========================================
+add_action( 'wp_footer', function() {
+    if ( ! is_singular( 'tribe_events' ) ) {
+        return;
+    }
+    
+    if ( isset( $_GET['abrir_modal'] ) && $_GET['abrir_modal'] == '1' ) :
+    ?>
+    <script type="text/javascript">
+        window.addEventListener("load", function() {
+            setTimeout(function() {
+                let botonPopupElementor = document.querySelector('a[href*="#elementor-action"], .elementor-button[href*="elementor-action"], a.elementor-repeater-item-');
+                
+                if (botonPopupElementor) {
+                    botonPopupElementor.click();
+                } else {
+                    let botones = document.querySelectorAll('a, button');
+                    for (let b of botones) {
+                        if (b.innerText && b.innerText.trim().toLowerCase() === 'reservar' && !b.classList.contains('app-card-btn')) {
+                            b.click();
+                            break;
+                        }
+                    }
+                }
+            }, 700);
+        });
+    </script>
+    <?php
+    endif;
+});
