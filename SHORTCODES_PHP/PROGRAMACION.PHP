@@ -99,7 +99,7 @@ function shortcode_programacion_general_meses() {
                     'duracion'    => (($t = get_the_terms($id, 'duracion')) && !is_wp_error($t)) ? $t[0]->name : '',
                     'estado'      => (($t = get_the_terms($id, 'estado_pases')) && !is_wp_error($t)) ? $t[0]->name : '',
                     'organizador' => tribe_get_organizer($id),
-                    'lugar'       => (($t = get_the_terms($id, 'recinto')) && !is_wp_error($t)) ? $t[0]->name : '',
+                    'lugar'       => tribe_get_venue($id), // Actualizado a sistema nativo de TEC
                     'precio'      => tribe_get_cost($id),
                     'pases'       => array()
                 );
