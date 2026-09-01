@@ -36,7 +36,31 @@ function indgenio_guardar_imagen_sede( $term_id ) {
 
 
 // ==========================================
-// 2. SHORTCODE DE TARJETAS DE SEDES CON ANIMACIÓN ULTRA SUAVE Y LENTA
+// 2. SHORTCODE [imagen_sede] PARA ELEMENTOR (TAMAÑO UNIFORME Y MÁS GRANDE)
+// ==========================================
+add_shortcode( 'imagen_sede', function() {
+    $term = get_queried_object();
+
+    if ( ! $term || ! isset( $term->taxonomy ) || $term->taxonomy !== 'sedes' ) {
+        return ''; 
+    }
+
+    $sede_imagen = get_term_meta( $term->term_id, 'imagen_sede', true );
+
+    if ( empty( $sede_imagen ) ) {
+        return ''; 
+    }
+
+    return '<div class="indgenio-sede-imagen-portada" style="margin: 25px 0; text-align: center;">' .
+           '<div style="width: 280px; height: 120px; margin: 0 auto; display: flex; align-items: center; justify-content: center;">' .
+           '<img src="' . esc_url( $sede_imagen ) . '" alt="' . esc_attr( $term->name ) . '" style="max-width: 100% !important; max-height: 100% !important; width: auto !important; height: auto !important; object-fit: contain !important; display: block;">' .
+           '</div>' .
+           '</div>';
+});
+
+
+// ==========================================
+// 3. SHORTCODE DE TARJETAS DE SEDES COMPLETO
 // ==========================================
 add_shortcode( 'tarjetas_sedes_educaescena', function() {
     $sedes = get_terms( array(
@@ -50,7 +74,6 @@ add_shortcode( 'tarjetas_sedes_educaescena', function() {
 
     $hoy = current_time( 'Y-m-d H:i:s' );
 
-    // Estilos CSS con transición ultra suave, 1.6s de duración y desplazamiento corto
     $output = '
     <style>
         @keyframes ultraSmoothFadeInUp {
@@ -77,6 +100,31 @@ add_shortcode( 'tarjetas_sedes_educaescena', function() {
             animation: ultraSmoothFadeInUp 1.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
         }
 
+        /* CAJA DE LOGO EN PC (Alineada a la izquierda) */
+        .indgenio-sede-logo-box {
+            margin-bottom: 15px;
+            width: 100%;
+            height: 65px; 
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .indgenio-sede-logo-box a {
+            display: flex;
+            align-items: center;
+            height: 100%;
+        }
+
+        .indgenio-sede-logo-box img {
+            width: auto !important;
+            height: auto !important;
+            max-width: 170px !important; 
+            max-height: 65px !important; 
+            object-fit: contain !important;
+            display: block;
+        }
+
         /* Retraso escalonado sutil y gradual entre tarjetas */
         .indgenio-sede-card:nth-child(1) { animation-delay: 0.25s; }
         .indgenio-sede-card:nth-child(2) { animation-delay: 0.5s; }
@@ -85,7 +133,12 @@ add_shortcode( 'tarjetas_sedes_educaescena', function() {
         .indgenio-sede-card:nth-child(5) { animation-delay: 1.25s; }
         .indgenio-sede-card:nth-child(n+6) { animation-delay: 1.5s; }
 
+        /* AJUSTES PARA MÓVIL Y TABLET (Relleno lateral y centrado simétrico absoluto) */
         @media (max-width: 1024px) {
+            .indgenio-sedes-grid-wrapper {
+                padding: 0 15px !important;
+                box-sizing: border-box !important;
+            }
             .indgenio-sede-card-header,
             .indgenio-sede-card-header div {
                 display: flex !important;
@@ -93,16 +146,31 @@ add_shortcode( 'tarjetas_sedes_educaescena', function() {
                 align-items: center !important;
                 text-align: center !important;
             }
+            .indgenio-sede-logo-box {
+                justify-content: center !important;
+                height: 95px !important; 
+            }
+            .indgenio-sede-logo-box a {
+                width: 100% !important;
+                justify-content: center !important;
+            }
+            .indgenio-sede-logo-box img {
+                max-width: 60% !important; 
+                max-height: 95px !important;
+                margin: 0 auto !important;
+                object-position: center center !important;
+            }
         }
     </style>';
 
-    $output .= '<div style="font-family: Raleway, sans-serif; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px;">';
+    $output .= '<div class="indgenio-sedes-grid-wrapper" style="font-family: Raleway, sans-serif;">';
+    $output .= '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; width: 100%;">';
 
     foreach ( $sedes as $sede ) {
         $sede_url = get_term_link( $sede );
         $sede_imagen = get_term_meta( $sede->term_id, 'imagen_sede', true );
 
-        // Consulta de eventos para esta sede (sin duplicar pases)
+        // Consulta de eventos para esta sede (sin duplicar pases y con limpieza de caché)
         $args_eventos = array(
             'post_type'      => 'tribe_events',
             'posts_per_page' => -1,
@@ -122,6 +190,9 @@ add_shortcode( 'tarjetas_sedes_educaescena', function() {
             while ( $query_eventos->have_posts() ) {
                 $query_eventos->the_post();
                 $id = get_the_ID();
+                
+                clean_post_cache($id);
+
                 $titulo = get_the_title();
                 $clave_grupo = sanitize_title( $titulo );
                 $inicio_raw = get_post_meta( $id, '_EventStartDate', true );
@@ -136,7 +207,7 @@ add_shortcode( 'tarjetas_sedes_educaescena', function() {
         }
 
         $num_eventos = count( $eventos_unicos );
-        $texto_funcion = ( $num_eventos === 1 ) ? 'Función' : 'Funciones';
+        $texto_funcion = ( $num_eventos === 1 ) ? 'Espectáculos' : 'Espectáculos';
 
         // Estructura de la tarjeta
         $output .= '<div class="indgenio-sede-card">';
@@ -144,7 +215,7 @@ add_shortcode( 'tarjetas_sedes_educaescena', function() {
             // Cabecera: Logo y Título
             $output .= '<div class="indgenio-sede-card-header">';
                 if ( ! empty( $sede_imagen ) ) {
-                    $output .= '<div style="margin-bottom: 15px; height: 50px; display: flex; align-items: center;"><a href="' . esc_url( $sede_url ) . '" target="_blank" style="display: block;"><img src="' . esc_url( $sede_imagen ) . '" alt="' . esc_attr( $sede->name . ' Logo' ) . '" style="max-height: 50px; width: auto; max-width: 100%; object-fit: contain;"></a></div>';
+                    $output .= '<div class="indgenio-sede-logo-box"><a href="' . esc_url( $sede_url ) . '" target="_blank"><img src="' . esc_url( $sede_imagen ) . '" alt="' . esc_attr( $sede->name . ' Logo' ) . '"></a></div>';
                 }
                 $output .= '<h3 style="margin: 0; font-size: 22px; font-weight: 700; text-transform: uppercase; font-family: Raleway, sans-serif;">';
                 $output .= '<a href="' . esc_url( $sede_url ) . '" target="_blank" style="color: #198C9C; text-decoration: none;">' . esc_html( $sede->name ) . '</a>';
@@ -167,6 +238,7 @@ add_shortcode( 'tarjetas_sedes_educaescena', function() {
         $output .= '</div>';
     }
 
+    $output .= '</div>';
     $output .= '</div>';
     return $output;
 });

@@ -1,7 +1,6 @@
 
 // ==========================================
-// 1. AÑADIR CAMPO EN RECINTOS PARA ASIGNAR SEDE (ORGANIZADOR)
-// ==========================================
+// 1. AÑADIR CAMPO EN RECINTOS PARA ASIGNAR SEDE (ORGANIZADOR)//
 add_action( 'add_meta_boxes', 'indgenio_vincular_recinto_organizador' );
 function indgenio_vincular_recinto_organizador() {
     add_meta_box(

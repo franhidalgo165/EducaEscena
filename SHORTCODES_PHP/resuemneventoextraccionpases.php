@@ -75,7 +75,7 @@ add_shortcode( 'info_evento', 'get_evento_info_shortcode' );
 
 
 // ==========================================
-// 2. EXTRACCIÓN REAL DE PASES Y CÁLCULO DE IMPORTE EN EL FOOTER
+// 2. EXTRACCIÓN REAL DE PASES Y CÁLCULO DE IMPORTE EN EL FOOTER (Corregido para múltiples pases)
 // ==========================================
 add_action( 'wp_footer', function() {
     if ( ! is_singular( 'tribe_events' ) ) {
@@ -83,14 +83,14 @@ add_action( 'wp_footer', function() {
     }
 
     $current_id = get_the_ID();
-    $titulo = get_the_title( $current_id );
+    $titulo_actual = get_the_title( $current_id );
     $fecha_actual = current_time( 'Y-m-d H:i:s' );
 
+    // Consulta corregida sin filtro 's' para capturar el 100% de los pases del evento
     $args = array(
         'post_type'      => 'tribe_events',
         'posts_per_page' => -1,
         'post_status'    => 'publish',
-        's'              => $titulo,
         'orderby'        => 'meta_value',
         'meta_key'       => '_EventStartDate',
         'order'          => 'ASC',
@@ -111,9 +111,9 @@ add_action( 'wp_footer', function() {
         while ( $query->have_posts() ) {
             $query->the_post();
             $p_id = get_the_ID();
-            $p_titulo = get_the_title();
             
-            if ( sanitize_title( $p_titulo ) === sanitize_title( $titulo ) ) {
+            // Validación estricta por título limpio comparando con la página actual
+            if ( sanitize_title( get_the_title( $p_id ) ) === sanitize_title( $titulo_actual ) ) {
                 $inicio_raw = get_post_meta( $p_id, '_EventStartDate', true );
                 $f_texto = tribe_get_start_date( $p_id, false, 'd M Y' );
                 $h_texto = tribe_get_start_date( $p_id, false, 'H:i' ) . 'h';

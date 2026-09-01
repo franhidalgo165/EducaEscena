@@ -129,10 +129,17 @@ function shortcode_programacion_general_meses() {
 
             $precio_raw = $evento['precio'];
             $precio_limpio = trim( str_replace( array('€', '$', '£', 'EUR'), '', $precio_raw ) );
-            if ( empty( $precio_raw ) || $precio_limpio === '' || floatval( $precio_limpio ) === 0.0 || stripos( $precio_raw, 'gratis' ) !== false || stripos( $precio_raw, 'free' ) !== false ) {
+            
+            if ( empty( $precio_raw ) || $precio_limpio === '' || stripos( $precio_raw, 'gratis' ) !== false || stripos( $precio_raw, 'free' ) !== false ) {
                 $precio = 'Gratuito';
             } else {
-                $precio = $precio_raw;
+                // Si es un número limpio (ej: "6" o "6.00"), le añadimos el símbolo del euro al lado
+                $num_val = floatval( str_replace(',', '.', $precio_limpio) );
+                if ($num_val > 0 || is_numeric($precio_limpio)) {
+                    $precio = $precio_limpio . ' €';
+                } else {
+                    $precio = $precio_raw; // Por si trae texto personalizado
+                }
             }
 
             $clase_estado = (strtolower($evento['estado']) == 'ocupado') ? 'estado-ocupado' : 'estado-disponible';
@@ -201,7 +208,6 @@ function shortcode_programacion_general_meses() {
             $html .= '          </div>';
             $html .= '      </div>';
             
-            // EL BOTÓN ABRE EN OTRA PESTAÑA CON target="_blank" Y AÑADE ?abrir_modal=1
             $enlace_reserva = esc_url( $evento['enlace'] . ( strpos($evento['enlace'], '?') !== false ? '&' : '?' ) . 'abrir_modal=1' );
             $html .= '      <div class="app-card-boton-box">';
             $html .= '          <a href="' . $enlace_reserva . '" target="_blank" class="app-card-btn">Reservar</a>';
