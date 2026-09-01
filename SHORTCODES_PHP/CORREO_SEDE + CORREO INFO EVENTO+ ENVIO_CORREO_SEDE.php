@@ -183,12 +183,13 @@ function indgenio_interceptar_correo_reserva_definitivo( $args ) {
                 $precio_texto = 'Gratuito';
             }
 
-            // TARJETA HTML EXACTA CON DISEÑO LIMPIO (SIN FECHA GENERAL Y CON ID DE CONTROL PARA AJAX)
-            $html_evento  = '<div style="font-family: Raleway, sans-serif; background:#f4f7f7; padding:20px; border-radius:12px; border: 1px solid #189c9c; color: #1D1E1C; margin-bottom: 20px;">';
-            $html_evento .= '<div style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #189c9c; font-weight: 700; margin-bottom: 2px;">Título de la obra:</div>';
-            $html_evento .= '<h3 style="margin-top:0; margin-bottom: 8px; color: #189c9c; font-weight: 700; font-size: 20px;">' . esc_html( $titulo ) . '</h3>';
-            $html_evento .= '<p style="margin: 0 0 8px 0; color: #189c9c;"><strong>Pase solicitado:</strong> <span id="texto-pase-en-resumen" style="font-weight:700;">' . esc_html( $fecha_hora_pase ) . '</span></p>';
-            if ( ! empty( $terminos_edad ) ) { $html_evento .= '<p style="margin: 5px 0;"><strong>Edad:</strong> ' . esc_html( $terminos_edad ) . '</p>'; }
+			// TARJETA HTML EXACTA CON DISEÑO LIMPIO (SIN FECHA GENERAL Y CON ID DE CONTROL PARA AJAX)
+						$html_evento  = '<div style="text-align: center; margin-bottom: 20px;"><img src="https://educaescena.es/wp-content/uploads/2026/07/LOGOTIPO-EDUCAESCENA_COLOR.png" alt="Educaescena" style="max-width: 200px; height: auto; display: inline-block;" /></div>';
+						$html_evento .= '<div style="font-family: Raleway, sans-serif; background:#f4f7f7; padding:20px; border-radius:12px; border: 1px solid #189c9c; color: #1D1E1C; margin-bottom: 20px;">';
+						$html_evento .= '<div style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #189c9c; font-weight: 700; margin-bottom: 2px;">Título de la obra:</div>';
+						$html_evento .= '<h3 style="margin-top:0; margin-bottom: 8px; color: #189c9c; font-weight: 700; font-size: 20px;">' . esc_html( $titulo ) . '</h3>';
+						$html_evento .= '<p style="margin: 0 0 8px 0; color: #189c9c;"><strong>Pase solicitado:</strong> <span id="texto-pase-en-resumen" style="font-weight:700;">' . esc_html( $fecha_hora_pase ) . '</span></p>';
+						if ( ! empty( $terminos_edad ) ) { $html_evento .= '<p style="margin: 5px 0;"><strong>Edad:</strong> ' . esc_html( $terminos_edad ) . '</p>'; }
             $html_evento .= '<p style="margin: 5px 0;"><strong>Sede:</strong> ' . esc_html( $terminos_sedes ) . '</p>';
             $html_evento .= '<p style="margin: 5px 0;"><strong>Lugar:</strong> ' . esc_html( $lugar ) . '</p>';
             $html_evento .= '<p style="margin: 5px 0;"><strong>Precio por plaza:</strong> ' . esc_html( $precio_texto ) . '</p>';
