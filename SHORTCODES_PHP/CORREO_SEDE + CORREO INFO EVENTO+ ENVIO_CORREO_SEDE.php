@@ -183,51 +183,57 @@ function indgenio_interceptar_correo_reserva_definitivo( $args ) {
                 $precio_texto = 'Gratuito';
             }
 
-			// TARJETA HTML EXACTA CON DISEÑO LIMPIO (SIN FECHA GENERAL Y CON ID DE CONTROL PARA AJAX)
-						$html_evento  = '<div style="text-align: center; margin-bottom: 20px;"><img src="https://educaescena.es/wp-content/uploads/2026/07/LOGOTIPO-EDUCAESCENA_COLOR.png" alt="Educaescena" style="max-width: 200px; height: auto; display: inline-block;" /></div>';
-						$html_evento .= '<div style="font-family: Raleway, sans-serif; background:#f4f7f7; padding:20px; border-radius:12px; border: 1px solid #189c9c; color: #1D1E1C; margin-bottom: 20px;">';
-						$html_evento .= '<div style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #189c9c; font-weight: 700; margin-bottom: 2px;">Título de la obra:</div>';
-						$html_evento .= '<h3 style="margin-top:0; margin-bottom: 8px; color: #189c9c; font-weight: 700; font-size: 20px;">' . esc_html( $titulo ) . '</h3>';
-						$html_evento .= '<p style="margin: 0 0 8px 0; color: #189c9c;"><strong>Pase solicitado:</strong> <span id="texto-pase-en-resumen" style="font-weight:700;">' . esc_html( $fecha_hora_pase ) . '</span></p>';
-						if ( ! empty( $terminos_edad ) ) { $html_evento .= '<p style="margin: 5px 0;"><strong>Edad:</strong> ' . esc_html( $terminos_edad ) . '</p>'; }
+            // TARJETA HTML DEL EVENTO
+            $html_evento  = '<div style="text-align: center; margin-bottom: 20px;"><img src="https://educaescena.es/wp-content/uploads/2026/07/LOGOTIPO-EDUCAESCENA_COLOR.png" alt="Educaescena" style="max-width: 200px; height: auto; display: inline-block;" /></div>';
+            $html_evento .= '<div style="font-family: Raleway, sans-serif; background:#f4f7f7; padding:20px; border-radius:12px; border: 1px solid #189c9c; color: #1D1E1C; margin-bottom: 20px;">';
+            $html_evento .= '<div style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #189c9c; font-weight: 700; margin-bottom: 2px;">Título de la obra:</div>';
+            $html_evento .= '<h3 style="margin-top:0; margin-bottom: 8px; color: #189c9c; font-weight: 700; font-size: 20px;">' . esc_html( $titulo ) . '</h3>';
+            $html_evento .= '<p style="margin: 0 0 8px 0; color: #189c9c;"><strong>Pase solicitado:</strong> <span id="texto-pase-en-resumen" style="font-weight:700;">' . esc_html( $fecha_hora_pase ) . '</span></p>';
+            if ( ! empty( $terminos_edad ) ) { $html_evento .= '<p style="margin: 5px 0;"><strong>Edad:</strong> ' . esc_html( $terminos_edad ) . '</p>'; }
             $html_evento .= '<p style="margin: 5px 0;"><strong>Sede:</strong> ' . esc_html( $terminos_sedes ) . '</p>';
             $html_evento .= '<p style="margin: 5px 0;"><strong>Lugar:</strong> ' . esc_html( $lugar ) . '</p>';
             $html_evento .= '<p style="margin: 5px 0;"><strong>Precio por plaza:</strong> ' . esc_html( $precio_texto ) . '</p>';
             $html_evento .= '</div>';
         }
 
-        // Texto legal y de avisos generales solicitados
+        // Texto legal y de avisos generales
         $texto_general_aviso = 'Para modificaciones o anulaciones de las solicitudes de asistencia ha de contactar con la oficina de gestión en el teléfono 622 007 355. Las sesiones son orientativas, la organización se reserva el derecho a cancelar el evento en el caso de no disponer de suficientes solicitudes para cubrir el aforo mínimo necesario. El precio por alumno/a indicado en la presente solicitud incluye el I.V.A.';
 
-        // Bloque de avisos con FONDO BLANCO (#ffffff), borde sutil y texto elegante
+        // Bloque de aviso con texto estrictamente alineado a la izquierda (sin etiquetas blockquote para evitar el formato de texto citado en móviles)
         $html_aviso = '';
         if ( ! empty( $aviso_texto ) ) {
             $html_aviso = '
-            <div style="background-color: #ffffff; color: #333333; padding: 18px 22px; border-radius: 12px; border: 1px solid #dcdcdc; font-family: Raleway, sans-serif; margin-top: 25px; margin-bottom: 20px; width: 100%; box-sizing: border-box;">
-                <strong style="font-size: 15px; font-weight: 700; display: block; margin-bottom: 5px; color: #189c9c;">Aviso importante</strong>
-                <span style="font-size: 14px; font-weight: 400; display: block; line-height: 1.4; margin-bottom: 12px; color: #444444;">' . esc_html( $aviso_texto ) . '</span>
+            <div style="background-color: #ffffff; color: #333333; text-align: left; padding: 18px 22px; border-radius: 12px; border: 1px solid #dcdcdc; font-family: Raleway, sans-serif; margin-top: 25px; margin-bottom: 20px; width: 100%; box-sizing: border-box;">
+                <strong style="font-size: 15px; font-weight: 700; display: block; text-align: left; margin-bottom: 5px; color: #189c9c;">Aviso importante</strong>
+                <span style="font-size: 14px; font-weight: 400; display: block; text-align: left; line-height: 1.4; margin-bottom: 12px; color: #444444;">' . esc_html( $aviso_texto ) . '</span>
                 <hr style="border: none; border-top: 1px solid #dcdcdc; margin: 12px 0;">
-                <span style="font-size: 11px; font-weight: 400; color: #666666; display: block; line-height: 1.4;">' . esc_html( $texto_general_aviso ) . '</span>
+                <span style="font-size: 11px; font-weight: 400; display: block; text-align: left; line-height: 1.4; color: #666666;">' . esc_html( $texto_general_aviso ) . '</span>
             </div>';
         } else {
             $html_aviso = '
-            <div style="background-color: #ffffff; color: #333333; padding: 15px 20px; border-radius: 12px; border: 1px solid #dcdcdc; font-family: Raleway, sans-serif; margin-top: 25px; margin-bottom: 20px; width: 100%; box-sizing: border-box;">
-                <span style="font-size: 11px; font-weight: 400; color: #666666; display: block; line-height: 1.4;">' . esc_html( $texto_general_aviso ) . '</span>
+            <div style="background-color: #ffffff; color: #333333; text-align: left; padding: 15px 20px; border-radius: 12px; border: 1px solid #dcdcdc; font-family: Raleway, sans-serif; margin-top: 25px; margin-bottom: 20px; width: 100%; box-sizing: border-box;">
+                <span style="font-size: 11px; font-weight: 400; display: block; text-align: left; line-height: 1.4; color: #666666;">' . esc_html( $texto_general_aviso ) . '</span>
             </div>';
         }
 
+        // Inyectar tarjeta del evento arriba
         if ( strpos( $args['message'], '[info_evento]' ) !== false ) {
             $args['message'] = str_replace( '[info_evento]', $html_evento, $args['message'] );
         } else {
             $args['message'] = $html_evento . $args['message'];
         }
 
-        $args['message'] .= $html_aviso;
+        // Inyectar el aviso dentro del bloque principal, justo antes de la coletilla
+        $coletilla = 'Este mensaje ha sido generado automáticamente por el sistema de gestión de Educaescena.';
+        if ( strpos( $args['message'], $coletilla ) !== false ) {
+            $args['message'] = str_replace( $coletilla, $html_aviso . '<br>' . $coletilla, $args['message'] );
+        } else {
+            $args['message'] .= $html_aviso;
+        }
     }
 
     return $args;
 }
-
 
 // ==========================================
 // 4. SHORTCODE [aviso_sede] PARA PINTAR EL RECUADRO EN LA WEB
