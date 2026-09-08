@@ -36,7 +36,7 @@ function indgenio_guardar_campo_aviso_sede( $term_id ) {
 
 
 // ==========================================
-// 2. SHORTCODE [aviso_sede] PARA PINTAR EL RECUADRO AUTOMÁTICAMENTE (Con Margen Lateral de 20px)
+// 2. SHORTCODE [aviso_sede] PARA PINTAR EL RECUADRO AUTOMÁTICAMENTE (Con márgenes dinámicos para móvil)
 // ==========================================
 add_shortcode( 'aviso_sede', function() {
     // Detectamos si estamos en la página de taxonomía (archivo) de la sede actual
@@ -53,9 +53,31 @@ add_shortcode( 'aviso_sede', function() {
         return '';
     }
 
-    // Estructura con márgenes laterales de 20px exactos y ancho adaptado (100% - 40px)
+    // Estructura respetando tu diseño original y añadiendo la responsividad justa para móviles
     $output = '
-    <div style="background-color: #198C9C; color: #ffffff; padding: 20px 25px; border-radius: 16px; font-family: Raleway, sans-serif; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin: 20px 20px; width: calc(100% - 40px); box-sizing: border-box;">
+    <style>
+        .aviso-sede-card {
+            background-color: #198C9C;
+            color: #ffffff;
+            padding: 20px 25px;
+            border-radius: 16px;
+            font-family: Raleway, sans-serif;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            margin: 20px 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        @media screen and (max-width: 768px) {
+            .aviso-sede-card {
+                margin: 20px 20px !important;
+                width: calc(100% - 40px) !important;
+            }
+        }
+    </style>
+    <div class="aviso-sede-card">
         <div style="display: flex; flex-direction: column; gap: 5px;">
             <strong style="font-size: 18px; font-weight: 700; letter-spacing: 0.3px;">Aviso importante</strong>
             <span style="font-size: 15px; font-weight: 400; opacity: 0.95;">' . esc_html( $aviso_texto ) . '</span>
