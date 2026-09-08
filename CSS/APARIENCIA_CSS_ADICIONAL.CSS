@@ -1,0 +1,123 @@
+#tribe-events-pg-template{
+    max-width: 100%!important;
+    padding: 0 !important;
+}
+html, body {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+}
+.elementor-alert {
+    border-radius: 20px !important;
+}
+
+/* Selector exacto para la etiqueta HTML dentro de los campos HTML de Forminator */
+#html-3 .forminator-field > label.forminator-label,
+div[id^="html-"] .forminator-field > label.forminator-label,
+.forminator-field-html .forminator-field > label.forminator-label {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+}
+
+/* Esconder fecha en resumen de evento - formulario */
+.evento-resumen-pro p {
+    /* Si el párrafo contiene el texto Fecha, lo ocultamos */
+}
+/* O más directo ocultando el tercer párrafo dentro de la tarjeta de resumen */
+.evento-resumen-pro p:nth-of-type(2) {
+    display: none !important;
+}
+
+/* /* ==========================================
+   CORRECCIÓN PROFESIONAL DE PESTAÑAS Y ALTURA DINÁMICA (FORMINATOR)
+   ========================================== */
+@media screen and (max-width: 768px) {
+    /* 1. Bloqueo estricto del scroll horizontal general */
+    html, body {
+        overflow-x: hidden !important;
+    }
+
+    .forminator-ui.forminator-custom-form, 
+    .forminator-modal, 
+    .forminator-popup,
+    .forminator-row {
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+        box-sizing: border-box !important;
+    }
+
+    /* 2. Ancho adaptativo del modal */
+    .forminator-ui.forminator-custom-form, 
+    .forminator-modal, 
+    .forminator-popup {
+        width: 94% !important;
+        max-width: 420px !important;
+        margin: 0 auto !important;
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+    }
+
+    /* 3. Altura uniforme y fluida para que no pegue saltos bruscos entre pasos */
+    .forminator-ui.forminator-custom-form {
+        min-height: 450px !important;
+        max-height: 82vh !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 35px !important;
+    }
+
+    /* 4. Hacer que las pestañas superiores (Función, Pase, Plazas, Resumen) sean desplazables si no caben */
+    .forminator-steps, 
+    .forminator-pagination-steps {
+        display: flex !important;
+        overflow-x: auto !important;
+        white-space: nowrap !important;
+        padding-bottom: 8px !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .forminator-steps::-webkit-scrollbar,
+    .forminator-pagination-steps::-webkit-scrollbar {
+        height: 3px;
+    }
+
+    .forminator-steps::-webkit-scrollbar-thumb,
+    .forminator-pagination-steps::-webkit-scrollbar-thumb {
+        background: rgba(25, 140, 156, 0.3);
+        border-radius: 3px;
+    }
+
+    /* 5. Espacios compactos entre campos */
+    .forminator-ui.forminator-custom-form .forminator-row {
+        margin-bottom: 6px !important;
+    }
+
+    .forminator-ui.forminator-custom-form .forminator-field {
+        margin-bottom: 3px !important;
+    }
+
+    /* 6. Avisos de error optimizados */
+    .forminator-ui.forminator-custom-form .forminator-error-message {
+        margin-top: 2px !important;
+        margin-bottom: 3px !important;
+        padding: 3px 6px !important;
+        font-size: 11px !important;
+    }
+
+    /* 7. Margen de seguridad inferior para los botones de navegación */
+    .forminator-page {
+        padding-bottom: 45px !important;
+    }
+
+    .forminator-row-last, 
+    .forminator-button-next, 
+    .forminator-pagination {
+        margin-bottom: 30px !important;
+        position: relative !important;
+        z-index: 10 !important;
+    }
+}
