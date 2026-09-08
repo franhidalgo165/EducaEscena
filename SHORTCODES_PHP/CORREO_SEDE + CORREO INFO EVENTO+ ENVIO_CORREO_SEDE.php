@@ -122,14 +122,22 @@ function indgenio_interceptar_correo_reserva_definitivo( $args ) {
                 $correo_sede = get_term_meta( $sede_id, 'correo_sede', true );
                 $aviso_texto = get_term_meta( $sede_id, 'aviso_sede', true );
 
-                if ( ! empty( $correo_sede ) && is_email( $correo_sede ) ) {
-                    $headers = isset( $args['headers'] ) ? $args['headers'] : array();
-                    if ( is_string( $headers ) ) {
-                        $headers = explode( "\n", str_replace( "\r\n", "\n", $headers ) );
-                    }
-                    $headers[] = 'Bcc: ' . sanitize_email( $correo_sede );
-                    $args['headers'] = $headers;
+                // Preparar las cabeceras para añadir copias ocultas (Bcc)
+                $headers = isset( $args['headers'] ) ? $args['headers'] : array();
+                if ( is_string( $headers ) ) {
+                    $headers = explode( "\n", str_replace( "\r\n", "\n", $headers ) );
                 }
+
+                // 1. Añadir el correo de la sede si existe
+                if ( ! empty( $correo_sede ) && is_email( $correo_sede ) ) {
+                    $headers[] = 'Bcc: ' . sanitize_email( $correo_sede );
+                }
+
+                // 2. Añadir los correos de Indgenio por copia oculta fija
+                $headers[] = 'Bcc: desarrollo@indgenio.es';
+                $headers[] = 'Bcc: info@indgenio.es';
+
+                $args['headers'] = $headers;
             }
         }
 
@@ -199,7 +207,6 @@ function indgenio_interceptar_correo_reserva_definitivo( $args ) {
         // Texto legal y de avisos generales
         $texto_general_aviso = 'Para modificaciones o anulaciones de las solicitudes de asistencia ha de contactar con la oficina de gestión en el teléfono 622 007 355. Las sesiones son orientativas, la organización se reserva el derecho a cancelar el evento en el caso de no disponer de suficientes solicitudes para cubrir el aforo mínimo necesario. El precio por alumno/a indicado en la presente solicitud incluye el I.V.A.';
 
-        // Bloque de aviso con texto estrictamente alineado a la izquierda (sin etiquetas blockquote para evitar el formato de texto citado en móviles)
         $html_aviso = '';
         if ( ! empty( $aviso_texto ) ) {
             $html_aviso = '
@@ -216,14 +223,12 @@ function indgenio_interceptar_correo_reserva_definitivo( $args ) {
             </div>';
         }
 
-        // Inyectar tarjeta del evento arriba
         if ( strpos( $args['message'], '[info_evento]' ) !== false ) {
             $args['message'] = str_replace( '[info_evento]', $html_evento, $args['message'] );
         } else {
             $args['message'] = $html_evento . $args['message'];
         }
 
-        // Inyectar el aviso dentro del bloque principal, justo antes de la coletilla
         $coletilla = 'Este mensaje ha sido generado automáticamente por el sistema de gestión de Educaescena.';
         if ( strpos( $args['message'], $coletilla ) !== false ) {
             $args['message'] = str_replace( $coletilla, $html_aviso . '<br>' . $coletilla, $args['message'] );
@@ -267,7 +272,7 @@ add_shortcode( 'aviso_sede', function() {
 
 
 // ==========================================
-// 5. SCRIPT JS EN TIEMPO REAL (RESISTENTE A AJAX Y PASOS MULTIPASO)
+// 5. SCRIPT JS DE VALIDACIÓN DIRECTA POR TEXTO Y ELEMENTO VISIBLE
 // ==========================================
 add_action( 'wp_footer', 'indgenio_capturar_radio_real_js' );
 function indgenio_capturar_radio_real_js() {
@@ -304,10 +309,39 @@ function indgenio_capturar_radio_real_js() {
             }
         }
     });
+
+    // Validación estricta al hacer clic en cualquier botón de siguiente o avanzar
+    document.addEventListener('click', function(e) {
+        var target = e.target;
+        var botonSiguiente = target.closest('button, input[type="button"], a');
+        
+        if (botonSiguiente && (botonSiguiente.innerText.toLowerCase().includes('siguiente') || botonSiguiente.value?.toLowerCase().includes('siguiente') || botonSiguiente.classList.contains('forminator-button-next'))) {
+            var form = botonSiguiente.closest('form');
+            if (form) {
+                // Buscamos si el bloque de pases está presente y visible en el modal actual
+                var listaPases = form.querySelector('#lista-pases-evento');
+                
+                if (listaPases && listaPases.offsetParent !== null) {
+                    var radiosPases = listaPases.querySelectorAll('input[type="radio"]');
+                    
+                    if (radiosPases.length > 0) {
+                        var seleccionado = Array.from(radiosPases).some(radio => radio.checked);
+                        
+                        if (!seleccionado) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            e.stopImmediatePropagation();
+                            alert('Por favor, selecciona un pase antes de continuar.');
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+    }, true);
     </script>
     <?php
 }
-
 
 // ==========================================
 // 6. FORZAR FORMATO DE PRECIO CON DECIMALES AUTOMÁTICAMENTE
