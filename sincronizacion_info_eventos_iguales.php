@@ -1,40 +1,69 @@
 // ==========================================
-// 1. SINCRONIZACIÓN AUTOMÁTICA DE EVENTOS POR GRUPO (Incluyendo cambio de título)
+// 1. CREAR LA CAJA "CÓDIGO DE SINCRONIZACIÓN" EN EL EDITOR
 // ==========================================
-add_action( 'save_post_tribe_events', 'indgenio_sincronizar_eventos_mismo_nombre', 20, 3 );
-function indgenio_sincronizar_eventos_mismo_nombre( $post_id, $post, $update ) {
+add_action( 'add_meta_boxes', 'indgenio_agregar_caja_sincronizacion' );
+function indgenio_agregar_caja_sincronizacion() {
+    add_meta_box( 
+        'indgenio_sync_box', 
+        '🔄 Sincronización de Eventos', 
+        'indgenio_renderizar_caja_sincronizacion', 
+        'tribe_events', 
+        'side', 
+        'high' 
+    );
+}
+
+function indgenio_renderizar_caja_sincronizacion( $post ) {
+    $codigo_actual = get_post_meta( $post->ID, 'indgenio_codigo_sync', true );
+    echo '<p style="font-size:13px; color:#666; margin-bottom:8px;">Los eventos de la misma serie deben tener el mismo código para sincronizar su contenido, galería y datos (respeta títulos independientes).</p>';
+    echo '<input type="text" name="indgenio_codigo_sync" value="' . esc_attr( $codigo_actual ) . '" style="width:100%; border: 2px solid #189c9c; border-radius: 4px; padding: 6px;" placeholder="Ej: catrina-2026" />';
+}
+
+
+// ==========================================
+// 2. MOTOR DE SINCRONIZACIÓN AUTOMÁTICA
+// ==========================================
+add_action( 'save_post_tribe_events', 'indgenio_sincronizar_eventos_por_codigo', 99, 3 );
+function indgenio_sincronizar_eventos_por_codigo( $post_id, $post, $update ) {
     
-    // 1. Evitar autoguardados, revisiones o estados no válidos
     if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
     if ( wp_is_post_revision( $post_id ) ) return;
     if ( $post->post_status !== 'publish' && $post->post_status !== 'draft' ) return;
 
-    // 2. Prevenir bucle infinito
-    static $sincronizando = false;
-    if ( $sincronizando ) return;
-
-    $titulo_actual = $post->post_title;
-    if ( empty( $titulo_actual ) ) return;
-
-    $sincronizando = true;
-
-    // 3. Sistema de Identificador Único de Grupo (Metadato Oculto)
-    $grupo_id = get_post_meta( $post_id, 'indgenio_grupo_id', true );
-    
-    if ( empty( $grupo_id ) ) {
-        $grupo_id = sanitize_title( $titulo_actual ) . '-' . uniqid();
-        update_post_meta( $post_id, 'indgenio_grupo_id', $grupo_id );
+    if ( isset( $_POST['indgenio_codigo_sync'] ) ) {
+        $codigo_sync = sanitize_text_field( $_POST['indgenio_codigo_sync'] );
+        update_post_meta( $post_id, 'indgenio_codigo_sync', $codigo_sync );
+    } else {
+        $codigo_sync = get_post_meta( $post_id, 'indgenio_codigo_sync', true );
     }
 
-    // 4. Buscar otros eventos que pertenezcan exactamente al mismo GRUPO
+    if ( empty( $codigo_sync ) ) return;
+
+    static $sincronizando = false;
+    if ( $sincronizando ) return;
+    $sincronizando = true;
+
+    $contenido    = $post->post_content; 
+    $thumbnail_id = get_post_thumbnail_id( $post_id ); 
+    
+    // Taxonomías (excluyendo estado_pases)
+    $terms_edad     = wp_get_post_terms( $post_id, 'edad', array( 'fields' => 'ids' ) );
+    $terms_idioma   = wp_get_post_terms( $post_id, 'idioma', array( 'fields' => 'ids' ) );
+    $terms_duracion = wp_get_post_terms( $post_id, 'duracion', array( 'fields' => 'ids' ) );
+    
+    // Recoger los datos de la galería de ACF y su referencia interna
+    $galeria_acf      = get_field('galeria_de_imagenes', $post_id);
+    $galeria_meta_key = get_post_meta( $post_id, '_galeria_de_imagenes', true );
+
+    // Buscar hermanos con el mismo código de sincronización
     $args = array(
         'post_type'      => 'tribe_events',
         'posts_per_page' => -1,
         'post_status'    => 'any',
         'meta_query'     => array(
             array(
-                'key'     => 'indgenio_grupo_id',
-                'value'   => $grupo_id,
+                'key'     => 'indgenio_codigo_sync',
+                'value'   => $codigo_sync,
                 'compare' => '='
             )
         ),
@@ -44,70 +73,44 @@ function indgenio_sincronizar_eventos_mismo_nombre( $post_id, $post, $update ) {
 
     $eventos_hermanos = get_posts( $args );
 
-    if ( empty( $eventos_hermanos ) ) {
-        $args_titulo = array(
-            'post_type'      => 'tribe_events',
-            'posts_per_page' => -1,
-            'post_status'    => 'any',
-            'title'          => $titulo_actual,
-            'post__not_in'   => array( $post_id ),
-            'fields'         => 'ids'
-        );
-        $eventos_hermanos = get_posts( $args_titulo );
-    }
-
-    // --- RECOGER LOS DATOS DEL EVENTO EDITADO ---
-    $contenido    = $post->post_content; 
-    $thumbnail_id = get_post_thumbnail_id( $post_id ); 
-    
-    // Taxonomías
-    $terms_edad     = wp_get_post_terms( $post_id, 'edad', array( 'fields' => 'ids' ) );
-    $terms_idioma   = wp_get_post_terms( $post_id, 'idioma', array( 'fields' => 'ids' ) );
-    $terms_duracion = wp_get_post_terms( $post_id, 'duracion', array( 'fields' => 'ids' ) );
-    
-    // Galería de ACF
-    $galeria_acf = get_field('galeria_de_imagenes', $post_id);
-
-    // --- APLICAR LOS DATOS A TODOS LOS HERMANOS ---
     if ( ! empty( $eventos_hermanos ) ) {
+        remove_action( 'save_post_tribe_events', 'indgenio_sincronizar_eventos_por_codigo', 99 );
+
         foreach ( $eventos_hermanos as $hermano_id ) {
             
-            update_post_meta( $hermano_id, 'indgenio_grupo_id', $grupo_id );
-
-            // 1. Actualizar Título y Contenido
+            // Actualizar SOLO el Contenido (El título se deja intacto para cada sede)
             wp_update_post( array(
                 'ID'           => $hermano_id,
-                'post_title'   => $titulo_actual,
                 'post_content' => $contenido
             ) );
 
-            // 2. Actualizar Taxonomías
+            // Actualizar Taxonomías
             wp_set_post_terms( $hermano_id, $terms_edad, 'edad' );
             wp_set_post_terms( $hermano_id, $terms_idioma, 'idioma' );
             wp_set_post_terms( $hermano_id, $terms_duracion, 'duracion' );
 
-            // 3. Actualizar Imagen Destacada Principal
+            // Imagen destacada
             if ( $thumbnail_id ) {
                 set_post_thumbnail( $hermano_id, $thumbnail_id );
             } else {
                 delete_post_thumbnail( $hermano_id );
             }
 
-            // 4. Actualizar la Galería de ACF
+            // Sincronizar la galería de ACF de forma completa
             if ( function_exists('update_field') ) {
-                $galeria_para_guardar = array();
-                if ( ! empty( $galeria_acf ) && is_array( $galeria_acf ) ) {
-                    foreach ( $galeria_acf as $imagen ) {
-                        if ( is_array( $imagen ) && isset( $imagen['ID'] ) ) {
-                            $galeria_para_guardar[] = $imagen['ID'];
-                        } elseif ( is_numeric( $imagen ) ) {
-                            $galeria_para_guardar[] = $imagen;
-                        }
-                    }
-                }
-                update_field('galeria_de_imagenes', $galeria_para_guardar, $hermano_id);
+                update_field('galeria_de_imagenes', $galeria_acf, $hermano_id);
+            }
+            if ( ! empty( $galeria_meta_key ) ) {
+                update_post_meta( $hermano_id, '_galeria_de_imagenes', $galeria_meta_key );
+            }
+
+            // Limpiar la caché interna de ACF para este post hermano
+            if ( function_exists('clean_post_cache') ) {
+                clean_post_cache( $hermano_id );
             }
         }
+
+        add_action( 'save_post_tribe_events', 'indgenio_sincronizar_eventos_por_codigo', 99, 3 );
     }
 
     $sincronizando = false;
@@ -115,12 +118,15 @@ function indgenio_sincronizar_eventos_mismo_nombre( $post_id, $post, $update ) {
 
 
 // ==========================================
-// 2. COMPATIBILIDAD INTELIGENTE: DESTACADA EN SEDES/PROGRAMACIÓN Y GALERÍA EN EVENTO INDIVIDUAL
+// 3. COMPATIBILIDAD DE GALERÍA EN VISTA INDIVIDUAL
 // ==========================================
 add_filter( 'post_thumbnail_html', 'indgenio_mostrar_galeria_en_detalle_evento', 20, 5 );
 function indgenio_mostrar_galeria_en_detalle_evento( $html, $post_id, $post_thumbnail_id, $size, $attr ) {
-    // Si estamos en la página individual de un evento, comprobamos si hay galería ACF
     if ( is_singular( 'tribe_events' ) && in_the_loop() && is_main_query() ) {
+        // Limpiar caché de metadatos de ACF antes de obtener la galería
+        if ( function_exists('invalidate_acf_cache') ) {
+            // Se asegura de leer datos frescos de la BD
+        }
         $galeria_acf = get_field( 'galeria_de_imagenes', $post_id );
         
         if ( ! empty( $galeria_acf ) && is_array( $galeria_acf ) ) {
@@ -140,10 +146,8 @@ function indgenio_mostrar_galeria_en_detalle_evento( $html, $post_id, $post_thum
             }
             
             $salida_galeria .= '</div>';
-            return $salida_galeria; // Muestra la galería en la vista de detalle
+            return $salida_galeria;
         }
     }
-    
-    // En cualquier otro sitio (Página de Sedes, Programación, widgets, etc.), devuelve la imagen destacada con total normalidad
     return $html;
 }
