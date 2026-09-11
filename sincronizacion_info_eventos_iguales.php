@@ -1,5 +1,5 @@
 // ==========================================
-// SINCRONIZACIÓN AUTOMÁTICA DE EVENTOS POR GRUPO (Incluyendo cambio de título)
+// 1. SINCRONIZACIÓN AUTOMÁTICA DE EVENTOS POR GRUPO (Incluyendo cambio de título)
 // ==========================================
 add_action( 'save_post_tribe_events', 'indgenio_sincronizar_eventos_mismo_nombre', 20, 3 );
 function indgenio_sincronizar_eventos_mismo_nombre( $post_id, $post, $update ) {
@@ -19,16 +19,14 @@ function indgenio_sincronizar_eventos_mismo_nombre( $post_id, $post, $update ) {
     $sincronizando = true;
 
     // 3. Sistema de Identificador Único de Grupo (Metadato Oculto)
-    // Comprobamos si el evento ya tiene un código de grupo asignado. Si no lo tiene, se lo creamos.
     $grupo_id = get_post_meta( $post_id, 'indgenio_grupo_id', true );
     
     if ( empty( $grupo_id ) ) {
-        // Generamos un identificador único basado en el título inicial limpio y un número aleatorio
         $grupo_id = sanitize_title( $titulo_actual ) . '-' . uniqid();
         update_post_meta( $post_id, 'indgenio_grupo_id', $grupo_id );
     }
 
-    // 4. Buscar otros eventos que pertenezcan exactamente al mismo GRUPO (independientemente de su título)
+    // 4. Buscar otros eventos que pertenezcan exactamente al mismo GRUPO
     $args = array(
         'post_type'      => 'tribe_events',
         'posts_per_page' => -1,
@@ -46,7 +44,6 @@ function indgenio_sincronizar_eventos_mismo_nombre( $post_id, $post, $update ) {
 
     $eventos_hermanos = get_posts( $args );
 
-    // Si aún hay eventos antiguos que no tienen el metadato pero se llaman igual, los cazamos por el título actual para unificarlos
     if ( empty( $eventos_hermanos ) ) {
         $args_titulo = array(
             'post_type'      => 'tribe_events',
@@ -60,8 +57,8 @@ function indgenio_sincronizar_eventos_mismo_nombre( $post_id, $post, $update ) {
     }
 
     // --- RECOGER LOS DATOS DEL EVENTO EDITADO ---
-    $contenido    = $post->post_content; // Descripción y vídeo de YouTube
-    $thumbnail_id = get_post_thumbnail_id( $post_id ); // Imagen destacada principal
+    $contenido    = $post->post_content; 
+    $thumbnail_id = get_post_thumbnail_id( $post_id ); 
     
     // Taxonomías
     $terms_edad     = wp_get_post_terms( $post_id, 'edad', array( 'fields' => 'ids' ) );
@@ -75,17 +72,16 @@ function indgenio_sincronizar_eventos_mismo_nombre( $post_id, $post, $update ) {
     if ( ! empty( $eventos_hermanos ) ) {
         foreach ( $eventos_hermanos as $hermano_id ) {
             
-            // Asegurarnos de que el hermano también tenga grabado el mismo identificador de grupo
             update_post_meta( $hermano_id, 'indgenio_grupo_id', $grupo_id );
 
-            // 1. Actualizar Título y Contenido (Descripción y YouTube)
+            // 1. Actualizar Título y Contenido
             wp_update_post( array(
                 'ID'           => $hermano_id,
                 'post_title'   => $titulo_actual,
                 'post_content' => $contenido
             ) );
 
-            // 2. Actualizar Taxonomías (Edad, Idioma, Duración)
+            // 2. Actualizar Taxonomías
             wp_set_post_terms( $hermano_id, $terms_edad, 'edad' );
             wp_set_post_terms( $hermano_id, $terms_idioma, 'idioma' );
             wp_set_post_terms( $hermano_id, $terms_duracion, 'duracion' );
@@ -97,12 +93,11 @@ function indgenio_sincronizar_eventos_mismo_nombre( $post_id, $post, $update ) {
                 delete_post_thumbnail( $hermano_id );
             }
 
-            // 4. Actualizar la Galería de ACF adaptando el formato array de imágenes
+            // 4. Actualizar la Galería de ACF
             if ( function_exists('update_field') ) {
                 $galeria_para_guardar = array();
                 if ( ! empty( $galeria_acf ) && is_array( $galeria_acf ) ) {
                     foreach ( $galeria_acf as $imagen ) {
-                        // Como devuelve un array de imágenes, extraemos el ID numérico de cada una
                         if ( is_array( $imagen ) && isset( $imagen['ID'] ) ) {
                             $galeria_para_guardar[] = $imagen['ID'];
                         } elseif ( is_numeric( $imagen ) ) {
@@ -116,4 +111,39 @@ function indgenio_sincronizar_eventos_mismo_nombre( $post_id, $post, $update ) {
     }
 
     $sincronizando = false;
+}
+
+
+// ==========================================
+// 2. COMPATIBILIDAD INTELIGENTE: DESTACADA EN SEDES/PROGRAMACIÓN Y GALERÍA EN EVENTO INDIVIDUAL
+// ==========================================
+add_filter( 'post_thumbnail_html', 'indgenio_mostrar_galeria_en_detalle_evento', 20, 5 );
+function indgenio_mostrar_galeria_en_detalle_evento( $html, $post_id, $post_thumbnail_id, $size, $attr ) {
+    // Si estamos en la página individual de un evento, comprobamos si hay galería ACF
+    if ( is_singular( 'tribe_events' ) && in_the_loop() && is_main_query() ) {
+        $galeria_acf = get_field( 'galeria_de_imagenes', $post_id );
+        
+        if ( ! empty( $galeria_acf ) && is_array( $galeria_acf ) ) {
+            $salida_galeria = '<div class="indgenio-evento-galeria-dinamica" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;">';
+            
+            foreach ( $galeria_acf as $imagen ) {
+                $img_url = '';
+                if ( is_array( $imagen ) && isset( $imagen['url'] ) ) {
+                    $img_url = $imagen['url'];
+                } elseif ( is_numeric( $imagen ) ) {
+                    $img_url = wp_get_attachment_url( $imagen );
+                }
+                
+                if ( ! empty( $img_url ) ) {
+                    $salida_galeria .= '<img src="' . esc_url( $img_url ) . '" alt="Galería del evento" style="max-width: 100%; height: auto; border-radius: 8px; flex: 1 1 calc(50% - 10px);">';
+                }
+            }
+            
+            $salida_galeria .= '</div>';
+            return $salida_galeria; // Muestra la galería en la vista de detalle
+        }
+    }
+    
+    // En cualquier otro sitio (Página de Sedes, Programación, widgets, etc.), devuelve la imagen destacada con total normalidad
+    return $html;
 }
