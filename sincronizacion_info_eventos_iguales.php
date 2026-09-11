@@ -15,13 +15,13 @@ function indgenio_agregar_caja_sincronizacion() {
 
 function indgenio_renderizar_caja_sincronizacion( $post ) {
     $codigo_actual = get_post_meta( $post->ID, 'indgenio_codigo_sync', true );
-    echo '<p style="font-size:13px; color:#666; margin-bottom:8px;">Los eventos de la misma serie deben tener el mismo código para sincronizar su contenido, galería y datos (respeta títulos independientes).</p>';
+    echo '<p style="font-size:13px; color:#666; margin-bottom:8px;">Mismo código para compartir contenido y galería entre sedes independientes.</p>';
     echo '<input type="text" name="indgenio_codigo_sync" value="' . esc_attr( $codigo_actual ) . '" style="width:100%; border: 2px solid #189c9c; border-radius: 4px; padding: 6px;" placeholder="Ej: catrina-2026" />';
 }
 
 
 // ==========================================
-// 2. MOTOR DE SINCRONIZACIÓN AUTOMÁTICA
+// 2. MOTOR DE SINCRONIZACIÓN AUTOMÁTICA (Seguro y ligero)
 // ==========================================
 add_action( 'save_post_tribe_events', 'indgenio_sincronizar_eventos_por_codigo', 99, 3 );
 function indgenio_sincronizar_eventos_por_codigo( $post_id, $post, $update ) {
@@ -46,12 +46,12 @@ function indgenio_sincronizar_eventos_por_codigo( $post_id, $post, $update ) {
     $contenido    = $post->post_content; 
     $thumbnail_id = get_post_thumbnail_id( $post_id ); 
     
-    // Taxonomías (excluyendo estado_pases)
+    // Taxonomías permitidas
     $terms_edad     = wp_get_post_terms( $post_id, 'edad', array( 'fields' => 'ids' ) );
     $terms_idioma   = wp_get_post_terms( $post_id, 'idioma', array( 'fields' => 'ids' ) );
     $terms_duracion = wp_get_post_terms( $post_id, 'duracion', array( 'fields' => 'ids' ) );
     
-    // Recoger los datos de la galería de ACF y su referencia interna
+    // Galería ACF
     $galeria_acf      = get_field('galeria_de_imagenes', $post_id);
     $galeria_meta_key = get_post_meta( $post_id, '_galeria_de_imagenes', true );
 
@@ -78,13 +78,13 @@ function indgenio_sincronizar_eventos_por_codigo( $post_id, $post, $update ) {
 
         foreach ( $eventos_hermanos as $hermano_id ) {
             
-            // Actualizar SOLO el Contenido (El título se deja intacto para cada sede)
+            // Actualizar SOLO el Contenido
             wp_update_post( array(
                 'ID'           => $hermano_id,
                 'post_content' => $contenido
             ) );
 
-            // Actualizar Taxonomías
+            // Actualizar Taxonomías generales
             wp_set_post_terms( $hermano_id, $terms_edad, 'edad' );
             wp_set_post_terms( $hermano_id, $terms_idioma, 'idioma' );
             wp_set_post_terms( $hermano_id, $terms_duracion, 'duracion' );
@@ -96,17 +96,12 @@ function indgenio_sincronizar_eventos_por_codigo( $post_id, $post, $update ) {
                 delete_post_thumbnail( $hermano_id );
             }
 
-            // Sincronizar la galería de ACF de forma completa
+            // Sincronizar galería ACF de forma segura
             if ( function_exists('update_field') ) {
                 update_field('galeria_de_imagenes', $galeria_acf, $hermano_id);
             }
             if ( ! empty( $galeria_meta_key ) ) {
                 update_post_meta( $hermano_id, '_galeria_de_imagenes', $galeria_meta_key );
-            }
-
-            // Limpiar la caché interna de ACF para este post hermano
-            if ( function_exists('clean_post_cache') ) {
-                clean_post_cache( $hermano_id );
             }
         }
 
@@ -123,10 +118,6 @@ function indgenio_sincronizar_eventos_por_codigo( $post_id, $post, $update ) {
 add_filter( 'post_thumbnail_html', 'indgenio_mostrar_galeria_en_detalle_evento', 20, 5 );
 function indgenio_mostrar_galeria_en_detalle_evento( $html, $post_id, $post_thumbnail_id, $size, $attr ) {
     if ( is_singular( 'tribe_events' ) && in_the_loop() && is_main_query() ) {
-        // Limpiar caché de metadatos de ACF antes de obtener la galería
-        if ( function_exists('invalidate_acf_cache') ) {
-            // Se asegura de leer datos frescos de la BD
-        }
         $galeria_acf = get_field( 'galeria_de_imagenes', $post_id );
         
         if ( ! empty( $galeria_acf ) && is_array( $galeria_acf ) ) {
