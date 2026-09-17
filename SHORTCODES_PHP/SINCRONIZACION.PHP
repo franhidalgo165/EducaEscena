@@ -21,7 +21,7 @@ function indgenio_renderizar_caja_sincronizacion( $post ) {
 
 
 // ==========================================
-// 2. MOTOR DE SINCRONIZACIÓN AUTOMÁTICA (Seguro y ligero)
+// 2. MOTOR DE SINCRONIZACIÓN AUTOMÁTICA (Inteligente: Pull & Push)
 // ==========================================
 add_action( 'save_post_tribe_events', 'indgenio_sincronizar_eventos_por_codigo', 99, 3 );
 function indgenio_sincronizar_eventos_por_codigo( $post_id, $post, $update ) {
@@ -30,32 +30,24 @@ function indgenio_sincronizar_eventos_por_codigo( $post_id, $post, $update ) {
     if ( wp_is_post_revision( $post_id ) ) return;
     if ( $post->post_status !== 'publish' && $post->post_status !== 'draft' ) return;
 
+    // 1. Comprobar si el evento ya tenía un código antes de guardar
+    $codigo_viejo = get_post_meta( $post_id, 'indgenio_codigo_sync', true );
+
+    // 2. Recoger y guardar el código nuevo
     if ( isset( $_POST['indgenio_codigo_sync'] ) ) {
-        $codigo_sync = sanitize_text_field( $_POST['indgenio_codigo_sync'] );
-        update_post_meta( $post_id, 'indgenio_codigo_sync', $codigo_sync );
+        $codigo_nuevo = sanitize_text_field( $_POST['indgenio_codigo_sync'] );
+        update_post_meta( $post_id, 'indgenio_codigo_sync', $codigo_nuevo );
     } else {
-        $codigo_sync = get_post_meta( $post_id, 'indgenio_codigo_sync', true );
+        $codigo_nuevo = $codigo_viejo;
     }
 
-    if ( empty( $codigo_sync ) ) return;
+    if ( empty( $codigo_nuevo ) ) return;
 
     static $sincronizando = false;
     if ( $sincronizando ) return;
     $sincronizando = true;
 
-    $contenido    = $post->post_content; 
-    $thumbnail_id = get_post_thumbnail_id( $post_id ); 
-    
-    // Taxonomías permitidas
-    $terms_edad     = wp_get_post_terms( $post_id, 'edad', array( 'fields' => 'ids' ) );
-    $terms_idioma   = wp_get_post_terms( $post_id, 'idioma', array( 'fields' => 'ids' ) );
-    $terms_duracion = wp_get_post_terms( $post_id, 'duracion', array( 'fields' => 'ids' ) );
-    
-    // Galería ACF
-    $galeria_acf      = get_field('galeria_de_imagenes', $post_id);
-    $galeria_meta_key = get_post_meta( $post_id, '_galeria_de_imagenes', true );
-
-    // Buscar hermanos con el mismo código de sincronización
+    // 3. Buscar hermanos con el código nuevo
     $args = array(
         'post_type'      => 'tribe_events',
         'posts_per_page' => -1,
@@ -63,7 +55,7 @@ function indgenio_sincronizar_eventos_por_codigo( $post_id, $post, $update ) {
         'meta_query'     => array(
             array(
                 'key'     => 'indgenio_codigo_sync',
-                'value'   => $codigo_sync,
+                'value'   => $codigo_nuevo,
                 'compare' => '='
             )
         ),
@@ -74,37 +66,84 @@ function indgenio_sincronizar_eventos_por_codigo( $post_id, $post, $update ) {
     $eventos_hermanos = get_posts( $args );
 
     if ( ! empty( $eventos_hermanos ) ) {
+        // Pausar el hook para no crear un bucle infinito
         remove_action( 'save_post_tribe_events', 'indgenio_sincronizar_eventos_por_codigo', 99 );
 
-        foreach ( $eventos_hermanos as $hermano_id ) {
-            
-            // Actualizar SOLO el Contenido
+        // Si es un evento nuevo (no tenía código antes) y el código ya existe en otros -> MODO ABSORBER (PULL)
+        if ( empty( $codigo_viejo ) ) {
+            $fuente_id = $eventos_hermanos[0]; // Cogemos la info del primer hermano encontrado
+            $fuente_post = get_post( $fuente_id );
+
+            // Absorber Contenido
             wp_update_post( array(
-                'ID'           => $hermano_id,
-                'post_content' => $contenido
+                'ID'           => $post_id,
+                'post_content' => $fuente_post->post_content
             ) );
 
-            // Actualizar Taxonomías generales
-            wp_set_post_terms( $hermano_id, $terms_edad, 'edad' );
-            wp_set_post_terms( $hermano_id, $terms_idioma, 'idioma' );
-            wp_set_post_terms( $hermano_id, $terms_duracion, 'duracion' );
+            // Absorber Taxonomías
+            $terms_edad     = wp_get_post_terms( $fuente_id, 'edad', array( 'fields' => 'ids' ) );
+            $terms_idioma   = wp_get_post_terms( $fuente_id, 'idioma', array( 'fields' => 'ids' ) );
+            $terms_duracion = wp_get_post_terms( $fuente_id, 'duracion', array( 'fields' => 'ids' ) );
+            wp_set_post_terms( $post_id, $terms_edad, 'edad' );
+            wp_set_post_terms( $post_id, $terms_idioma, 'idioma' );
+            wp_set_post_terms( $post_id, $terms_duracion, 'duracion' );
 
-            // Imagen destacada
+            // Absorber Imagen destacada
+            $thumbnail_id = get_post_thumbnail_id( $fuente_id );
             if ( $thumbnail_id ) {
-                set_post_thumbnail( $hermano_id, $thumbnail_id );
-            } else {
-                delete_post_thumbnail( $hermano_id );
+                set_post_thumbnail( $post_id, $thumbnail_id );
             }
 
-            // Sincronizar galería ACF de forma segura
-            if ( function_exists('update_field') ) {
-                update_field('galeria_de_imagenes', $galeria_acf, $hermano_id);
+            // Absorber Galería ACF
+            $galeria_acf      = get_field('galeria_de_imagenes', $fuente_id);
+            $galeria_meta_key = get_post_meta( $fuente_id, '_galeria_de_imagenes', true );
+            
+            if ( function_exists('update_field') && !empty($galeria_acf) ) {
+                update_field('galeria_de_imagenes', $galeria_acf, $post_id);
             }
             if ( ! empty( $galeria_meta_key ) ) {
-                update_post_meta( $hermano_id, '_galeria_de_imagenes', $galeria_meta_key );
+                update_post_meta( $post_id, '_galeria_de_imagenes', $galeria_meta_key );
+            }
+
+        } 
+        // Si el evento ya tenía código y lo estás actualizando -> MODO EMPUJAR (PUSH)
+        else {
+            $contenido    = $post->post_content; 
+            $thumbnail_id = get_post_thumbnail_id( $post_id ); 
+            
+            $terms_edad     = wp_get_post_terms( $post_id, 'edad', array( 'fields' => 'ids' ) );
+            $terms_idioma   = wp_get_post_terms( $post_id, 'idioma', array( 'fields' => 'ids' ) );
+            $terms_duracion = wp_get_post_terms( $post_id, 'duracion', array( 'fields' => 'ids' ) );
+            
+            $galeria_acf      = get_field('galeria_de_imagenes', $post_id);
+            $galeria_meta_key = get_post_meta( $post_id, '_galeria_de_imagenes', true );
+
+            foreach ( $eventos_hermanos as $hermano_id ) {
+                wp_update_post( array(
+                    'ID'           => $hermano_id,
+                    'post_content' => $contenido
+                ) );
+
+                wp_set_post_terms( $hermano_id, $terms_edad, 'edad' );
+                wp_set_post_terms( $hermano_id, $terms_idioma, 'idioma' );
+                wp_set_post_terms( $hermano_id, $terms_duracion, 'duracion' );
+
+                if ( $thumbnail_id ) {
+                    set_post_thumbnail( $hermano_id, $thumbnail_id );
+                } else {
+                    delete_post_thumbnail( $hermano_id );
+                }
+
+                if ( function_exists('update_field') ) {
+                    update_field('galeria_de_imagenes', $galeria_acf, $hermano_id);
+                }
+                if ( ! empty( $galeria_meta_key ) ) {
+                    update_post_meta( $hermano_id, '_galeria_de_imagenes', $galeria_meta_key );
+                }
             }
         }
 
+        // Restaurar el hook
         add_action( 'save_post_tribe_events', 'indgenio_sincronizar_eventos_por_codigo', 99, 3 );
     }
 
