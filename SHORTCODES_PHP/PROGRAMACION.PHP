@@ -1,3 +1,5 @@
+<?php
+
 // ==========================================
 // 1. SHORTCODE DE PROGRAMACIÓN GENERAL DE MESES
 // ==========================================
@@ -30,8 +32,13 @@ function shortcode_programacion_general_meses() {
         .app-mes-header:first-child { margin-top: 0 !important; }
         .app-card-evento { display: flex; flex-direction: row; align-items: stretch; background: #ffffff; border-radius: 16px; border: 1px solid #edf2f7; box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.03); width: 100%; box-sizing: border-box; transition: transform 0.2s ease, box-shadow 0.2s ease; overflow: hidden; margin-bottom: 35px; }
         .app-card-evento:hover { transform: translateY(-2px); box-shadow: 0px 6px 25px rgba(0, 0, 0, 0.06); }
+        
+        /* Imagen enlazada */
         .app-card-img-box { width: 300px; min-height: 100%; flex-shrink: 0; display: flex; overflow: hidden; background-color: #0e7490; }
-        .app-card-img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+        .app-card-img-link { display: flex; width: 100%; height: 100%; text-decoration: none; }
+        .app-card-img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; transition: transform 0.3s ease; }
+        .app-card-img-link:hover .app-card-img { transform: scale(1.03); }
+
         .app-card-content-box { width: 70%; display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 20px 24px; box-sizing: border-box; }
         .app-card-textos { display: flex; flex-direction: column; gap: 8px; flex-grow: 1; }
         .app-header-titulo-box { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 4px; }
@@ -133,12 +140,11 @@ function shortcode_programacion_general_meses() {
             if ( empty( $precio_raw ) || $precio_limpio === '' || stripos( $precio_raw, 'gratis' ) !== false || stripos( $precio_raw, 'free' ) !== false ) {
                 $precio = 'Gratuito';
             } else {
-                // Si es un número limpio (ej: "6" o "6.00"), le añadimos el símbolo del euro al lado
                 $num_val = floatval( str_replace(',', '.', $precio_limpio) );
                 if ($num_val > 0 || is_numeric($precio_limpio)) {
                     $precio = $precio_limpio . ' €';
                 } else {
-                    $precio = $precio_raw; // Por si trae texto personalizado
+                    $precio = $precio_raw;
                 }
             }
 
@@ -160,14 +166,17 @@ function shortcode_programacion_general_meses() {
             foreach ($evento['pases'] as $p) {
                 $pases_por_dia[$p['fecha_key']]['fecha_formateada'] = $p['fecha'];
                 $pases_por_dia[$p['fecha_key']]['horas'][] = array(
-                    'hora' => $p['hora'],
+                    'hora'   => $p['hora'],
                     'enlace' => $p['enlace']
                 );
             }
 
             // HTML TARJETA
             $html .= '<div class="app-card-evento">';
-            $html .= '  <div class="app-card-img-box"><img src="' . esc_url($evento['imagen']) . '" alt="' . esc_attr($evento['titulo']) . '" class="app-card-img"></div>';
+            
+            // Imagen enlazada al evento individual
+            $html .= '  <div class="app-card-img-box"><a href="' . esc_url($evento['enlace']) . '" target="_blank" class="app-card-img-link"><img src="' . esc_url($evento['imagen']) . '" alt="' . esc_attr($evento['titulo']) . '" class="app-card-img"></a></div>';
+            
             $html .= '  <div class="app-card-content-box">';
             $html .= '      <div class="app-card-textos">';
             $html .= '          <div class="app-header-titulo-box"><a href="' . esc_url($evento['enlace']) . '" target="_blank" class="app-titulo-link"><h3 class="app-card-titulo">' . esc_html($evento['titulo']) . '</h3></a>';
