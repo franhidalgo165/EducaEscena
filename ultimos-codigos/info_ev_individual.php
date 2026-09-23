@@ -81,12 +81,11 @@ function shortcode_detalle_evento_unificado() {
     $organizador = tribe_get_organizer( $current_id );
     $duracion_texto = (($t = get_the_terms($current_id, 'duracion')) && !is_wp_error($t)) ? $t[0]->name : '';
 
-    // LECTURA DEL CONTENIDO Y LIMPIEZA AUTOMÁTICA PARA QUE NO SE VEA EN LA WEB
-    $post_obj = get_post($current_id);
-    $contenido_evento = $post_obj ? $post_obj->post_content : '';
+ // LECTURA DEL EXTRACTO PARA LAS COMPLETADAS
+    $extracto_evento = get_the_excerpt( $current_id );
     $array_completadas = array();
     
-    if ( preg_match( '/\[completado:\s*([^\]]+)\]/i', $contenido_evento, $matches ) ) {
+    if ( preg_match( '/\[completado:\s*([^\]]+)\]/i', $extracto_evento, $matches ) ) {
         $array_completadas = array_map( 'trim', explode( ',', $matches[1] ) );
     }
 

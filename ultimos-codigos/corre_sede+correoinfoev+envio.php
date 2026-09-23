@@ -299,7 +299,7 @@ add_shortcode( 'aviso_sede', function() {
 });
 
 // ==========================================
-// 5. SCRIPT JS DE SELECCIÓN, VALIDACIÓN Y LISTA DE ESPERA CONDICIONAL
+// 5. SCRIPT JS DE SELECCIÓN, VALIDACIÓN Y LISTA DE ESPERA (BASADO EN PANTALLA)
 // ==========================================
 add_action( 'wp_footer', 'indgenio_capturar_radio_real_js' );
 function indgenio_capturar_radio_real_js() {
@@ -327,21 +327,21 @@ function indgenio_capturar_radio_real_js() {
         }
     }, true);
 
-    // Marcar pases ocupados en rojo en la pestaña de selección
-    function actualizarPasesForminator() {
-        var pasesOcupados = [];
-        document.querySelectorAll('.app-hora-texto.estado-ocupado, .app-hora-enlace.estado-ocupado').forEach(function(el) {
+    // Leer las horas que ya están en rojo en la página y aplicarlas al formulario
+    function sincronizarPasesRojosForminator() {
+        var horasRojas = [];
+        
+        // Buscar cualquier elemento de hora que tenga la clase de ocupado o estilo rojo en la pantalla
+        document.querySelectorAll('.estado-ocupado, .app-hora-texto.estado-ocupado, .app-hora-enlace.estado-ocupado').forEach(function(el) {
             var textoHora = el.innerText.trim();
-            var fila = el.closest('.app-dia-fila');
-            if (fila) {
-                var textoFecha = fila.querySelector('.app-dia-texto');
-                if (textoFecha) {
-                    var fechaLimpia = textoFecha.innerText.replace(':', '').trim();
-                    pasesOcupados.push(fechaLimpia + ' ' + textoHora);
-                }
+            // Extraer formato HH:MM o similar
+            var matches = textoHora.match(/\d{2}:\d{2}/);
+            if (matches) {
+                horasRojas.push(matches[0]);
             }
-            pasesOcupados.push(textoHora);
         });
+
+        if (horasRojas.length === 0) return;
 
         var formulariosForminator = document.querySelectorAll('.forminator-custom-form, form.forminator-ui');
         formulariosForminator.forEach(function(form) {
@@ -350,13 +350,11 @@ function indgenio_capturar_radio_real_js() {
             labelsOpciones.forEach(function(label) {
                 var textoLabel = label.innerText || '';
                 
-                var paseEncontrado = pasesOcupados.find(function(paseOcupado) {
-                    var partes = paseOcupado.split(' ');
-                    var horaBuscada = partes[partes.length - 1];
-                    return textoLabel.includes(horaBuscada) && (textoLabel.includes('30 Nov') || textoLabel.includes('01 Dic') || textoLabel.includes(partes[0]));
+                var estaLleno = horasRojas.some(function(hora) {
+                    return textoLabel.includes(hora);
                 });
 
-                if (paseEncontrado && !label.querySelector('.etiqueta-lista-espera')) {
+                if (estaLleno && !label.querySelector('.etiqueta-lista-espera')) {
                     label.style.color = '#c53030';
                     label.style.fontWeight = 'bold';
                     
@@ -374,31 +372,23 @@ function indgenio_capturar_radio_real_js() {
         });
     }
 
-    // Gestionar la tarjeta roja y asegurar que el checkbox esté siempre presente si el pase está ocupado
+    // Gestionar la tarjeta roja y el checkbox en el resumen del formulario
     function actualizarResumenForminator() {
-        var pasesOcupados = [];
-        document.querySelectorAll('.app-hora-texto.estado-ocupado, .app-hora-enlace.estado-ocupado').forEach(function(el) {
+        var horasRojas = [];
+        document.querySelectorAll('.estado-ocupado, .app-hora-texto.estado-ocupado, .app-hora-enlace.estado-ocupado').forEach(function(el) {
             var textoHora = el.innerText.trim();
-            var fila = el.closest('.app-dia-fila');
-            if (fila) {
-                var textoFecha = fila.querySelector('.app-dia-texto');
-                if (textoFecha) {
-                    var fechaLimpia = textoFecha.innerText.replace(':', '').trim();
-                    pasesOcupados.push(fechaLimpia + ' ' + textoHora);
-                }
+            var matches = textoHora.match(/\d{2}:\d{2}/);
+            if (matches) {
+                horasRojas.push(matches[0]);
             }
-            pasesOcupados.push(textoHora);
         });
 
         var paseSeleccionado = localStorage.getItem('forminator_ultimo_pase_768') || '';
         
-        var estaOcupado = pasesOcupados.some(function(paseOcupado) {
-            var partes = paseOcupado.split(' ');
-            var horaBuscada = partes[partes.length - 1];
-            return paseSeleccionado.includes(horaBuscada) && (paseSeleccionado.includes('30 Nov') || paseSeleccionado.includes('01 Dic') || paseSeleccionado.includes(partes[0]));
+        var estaOcupado = horasRojas.some(function(hora) {
+            return paseSeleccionado.includes(hora);
         });
 
-        // Informar a PHP mediante input oculto
         var form = document.querySelector('.forminator-custom-form, form.forminator-ui');
         if (form) {
             var inputListaEspera = form.querySelector('#es_lista_espera_real');
@@ -413,17 +403,12 @@ function indgenio_capturar_radio_real_js() {
         }
 
         var tarjetaExistente = document.querySelector('.tarjeta-alerta-roja-exclusiva');
-
-        // Si NO está ocupado, eliminamos la tarjeta y salimos
         if (!estaOcupado) {
-            if (tarjetaExistente) {
-                tarjetaExistente.remove();
-            }
+            if (tarjetaExistente) { tarjetaExistente.remove(); }
             return;
         }
 
         var checkboxExiste = tarjetaExistente ? tarjetaExistente.querySelector('#check_consciente_lista_espera') : null;
-
         if (estaOcupado && (!tarjetaExistente || !checkboxExiste)) {
             if (tarjetaExistente) { tarjetaExistente.remove(); }
 
@@ -476,11 +461,11 @@ function indgenio_capturar_radio_real_js() {
         }
     }
 
-    setTimeout(actualizarPasesForminator, 500);
+    setTimeout(sincronizarPasesRojosForminator, 600);
     document.addEventListener('click', function() {
-        setTimeout(actualizarPasesForminator, 250);
-        setTimeout(actualizarResumenForminator, 300);
-        setTimeout(actualizarResumenForminator, 700);
+        setTimeout(sincronizarPasesRojosForminator, 300);
+        setTimeout(actualizarResumenForminator, 400);
+        setTimeout(actualizarResumenForminator, 800);
     });
 
     document.addEventListener('submit', function(e) {
