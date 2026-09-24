@@ -299,7 +299,7 @@ add_shortcode( 'aviso_sede', function() {
 });
 
 // ==========================================
-// 5. SCRIPT JS DE SELECCIÓN, VALIDACIÓN Y LISTA DE ESPERA (BASADO EN PANTALLA)
+// 5. SCRIPT JS DE SELECCIÓN, VALIDACIÓN Y LISTA DE ESPERA (CONCORDANCIA FECHA + HORA)
 // ==========================================
 add_action( 'wp_footer', 'indgenio_capturar_radio_real_js' );
 function indgenio_capturar_radio_real_js() {
@@ -327,34 +327,40 @@ function indgenio_capturar_radio_real_js() {
         }
     }, true);
 
-    // Leer las horas que ya están en rojo en la página y aplicarlas al formulario
+    // Leer los pases que están realmente en rojo en la tarjeta del evento (Fecha exacta + Hora)
     function sincronizarPasesRojosForminator() {
-        var horasRojas = [];
+        var pasesOcupadosExactos = [];
         
-        // Buscar cualquier elemento de hora que tenga la clase de ocupado o estilo rojo en la pantalla
-        document.querySelectorAll('.estado-ocupado, .app-hora-texto.estado-ocupado, .app-hora-enlace.estado-ocupado').forEach(function(el) {
-            var textoHora = el.innerText.trim();
-            // Extraer formato HH:MM o similar
-            var matches = textoHora.match(/\d{2}:\d{2}/);
-            if (matches) {
-                horasRojas.push(matches[0]);
+        // Buscar las filas de días en la tarjeta del evento que contienen pases marcados en rojo
+        document.querySelectorAll('.app-dia-fila').forEach(function(fila) {
+            var textoDia = fila.querySelector('.app-dia-texto');
+            if (textoDia) {
+                var fechaStr = textoDia.innerText.replace(':', '').trim(); // Ej: "21 Abr"
+                
+                fila.querySelectorAll('.estado-ocupado').forEach(function(elHora) {
+                    var horaStr = elHora.innerText.replace('h', '').trim(); // Ej: "10:00"
+                    pasesOcupadosExactos.push({
+                        fecha: fechaStr,
+                        hora: horaStr
+                    });
+                });
             }
         });
 
-        if (horasRojas.length === 0) return;
+        if (pasesOcupadosExactos.length === 0) return;
 
         var formulariosForminator = document.querySelectorAll('.forminator-custom-form, form.forminator-ui');
         formulariosForminator.forEach(function(form) {
             var labelsOpciones = form.querySelectorAll('label, .forminator-radio');
             
             labelsOpciones.forEach(function(label) {
-                var textoLabel = label.innerText || '';
+                var textoLabel = label.innerText || ''; // Ej: "21 Abr 2027 a las 10:00h"
                 
-                var estaLleno = horasRojas.some(function(hora) {
-                    return textoLabel.includes(hora);
+                var coincide = pasesOcupadosExactos.some(function(item) {
+                    return textoLabel.includes(item.fecha) && textoLabel.includes(item.hora);
                 });
 
-                if (estaLleno && !label.querySelector('.etiqueta-lista-espera')) {
+                if (coincide && !label.querySelector('.etiqueta-lista-espera')) {
                     label.style.color = '#c53030';
                     label.style.fontWeight = 'bold';
                     
@@ -372,21 +378,27 @@ function indgenio_capturar_radio_real_js() {
         });
     }
 
-    // Gestionar la tarjeta roja y el checkbox en el resumen del formulario
+    // Gestionar la tarjeta roja y el checkbox en el resumen del formulario usando fecha + hora
     function actualizarResumenForminator() {
-        var horasRojas = [];
-        document.querySelectorAll('.estado-ocupado, .app-hora-texto.estado-ocupado, .app-hora-enlace.estado-ocupado').forEach(function(el) {
-            var textoHora = el.innerText.trim();
-            var matches = textoHora.match(/\d{2}:\d{2}/);
-            if (matches) {
-                horasRojas.push(matches[0]);
+        var pasesOcupadosExactos = [];
+        document.querySelectorAll('.app-dia-fila').forEach(function(fila) {
+            var textoDia = fila.querySelector('.app-dia-texto');
+            if (textoDia) {
+                var fechaStr = textoDia.innerText.replace(':', '').trim();
+                fila.querySelectorAll('.estado-ocupado').forEach(function(elHora) {
+                    var horaStr = elHora.innerText.replace('h', '').trim();
+                    pasesOcupadosExactos.push({
+                        fecha: fechaStr,
+                        hora: horaStr
+                    });
+                });
             }
         });
 
         var paseSeleccionado = localStorage.getItem('forminator_ultimo_pase_768') || '';
         
-        var estaOcupado = horasRojas.some(function(hora) {
-            return paseSeleccionado.includes(hora);
+        var estaOcupado = pasesOcupadosExactos.some(function(item) {
+            return paseSeleccionado.includes(item.fecha) && paseSeleccionado.includes(item.hora);
         });
 
         var form = document.querySelector('.forminator-custom-form, form.forminator-ui');
